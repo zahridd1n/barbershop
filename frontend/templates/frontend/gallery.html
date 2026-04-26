@@ -1,0 +1,27 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}BossBarber | Galereya{% endblock %}
+
+{% block content %}
+<section class="inner-hero">
+    <div class="container">
+        <p class="eyebrow">Galereya</p>
+        <h1 class="inner-title">Ishlar va muhitdan tanlangan kadrlar</h1>
+        <p class="inner-text">Barbershop uslubi faqat natijada emas, atmosferada ham bilinadi.</p>
+    </div>
+</section>
+
+<section class="section-pad">
+    <div class="container">
+        <div class="gallery-grid gallery-grid-full">
+            {% for item in gallery %}
+                <div class="gallery-item">
+                    <img src="{{ item.image.url }}" alt="Gallery image">
+                </div>
+            {% empty %}
+                <div class="empty-state">Galereya bo‘sh.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

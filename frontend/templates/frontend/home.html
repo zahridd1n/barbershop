@@ -1,0 +1,289 @@
+﻿{% extends "frontend/base.html" %}
+
+{% block title %}BossBarber | Bosh sahifa{% endblock %}
+
+{% block content %}
+<section class="hero-section hero-banner">
+    <div class="container">
+        <div class="hero-frame">
+            <div class="row g-4 align-items-center hero-layout">
+                <div class="col-lg-6">
+                    <div class="hero-copy">
+<!--                        <p class="eyebrow">Premium barbershop experience</p>-->
+                        <span class="hero-badge">Style. Precision. Atmosphere.</span>
+                        <h3 class="hero-title">Zamonaviy Barbershop</h3>
+                        <p class="hero-text">
+                            Soch turmagi, soqol parvarishi va qulay online booking bir joyda. Har bir tashrif aniqlik, toza servis va kuchli atmosfera bilan qurilgan.
+                        </p>
+                        <div class="d-flex flex-wrap gap-3 mt-4 hero-actions">
+                            <a href="{% url 'frontend:booking' %}" class="btn btn-accent btn-lg">Joy band qilish</a>
+                            <a href="{% url 'frontend:services' %}" class="btn hero-secondary-btn btn-lg">Xizmatlarni ko'rish</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-visual">
+                        {% if primary_banner and primary_banner.image %}
+                            <img src="{{ primary_banner.image.url }}" alt="BossBarber banner" class="hero-main-image">
+                        {% elif primary_banner and primary_banner.image1 %}
+                            <img src="{{ primary_banner.image1.url }}" alt="BossBarber banner" class="hero-main-image">
+                        {% else %}
+                            <div class="hero-placeholder hero-main-image">
+                                <span>BossBarber</span>
+                            </div>
+                        {% endif %}
+
+                        <div class="hero-floating-card hero-floating-card-top">
+                            <span class="floating-label">Top xizmat</span>
+                            {% if services %}
+                                <strong>{{ services.0.name }}</strong>
+                                <p>{{ services.0.time }} • {{ services.0.price }}</p>
+                            {% else %}
+                                <strong>Premium xizmatlar</strong>
+                                <p>Barbershop servis menyusi</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="hero-floating-card hero-floating-card-bottom">
+                            <span class="floating-label">Bugungi fokus</span>
+                            {% if barbers %}
+                                <strong>{{ barbers.0.name }}</strong>
+                                <p>{{ barbers.0.experience }} yil tajriba</p>
+                            {% else %}
+                                <strong>Professional jamoa</strong>
+                                <p>Sifatli xizmat va kuchli atmosfera</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section-pad pt-0">
+    <div class="container">
+        <div class="hero-info-grid">
+            <article class="info-card">
+                <div class="info-card-top">
+                    <span class="info-icon"><i class="bi bi-scissors"></i></span>
+                    <span class="info-label">Xizmatlar</span>
+                </div>
+                <strong>{{ services|length }}+</strong>
+                <p class="mb-0">Asosiy va qo'shimcha xizmatlar bir joyda jamlangan.</p>
+            </article>
+            <article class="info-card">
+                <div class="info-card-top">
+                    <span class="info-icon"><i class="bi bi-people"></i></span>
+                    <span class="info-label">Jamoa</span>
+                </div>
+                <strong>{{ barbers|length }}+</strong>
+                <p class="mb-0">Tajribali barberlar mijozga mos uslubni taklif qiladi.</p>
+            </article>
+            <article class="info-card">
+                <div class="info-card-top">
+                    <span class="info-icon"><i class="bi bi-calendar-check"></i></span>
+                    <span class="info-label">Booking</span>
+                </div>
+                <strong>7/7</strong>
+                <p class="mb-0">Qulay vaqtni tanlab, bir necha qadamda yozilish mumkin.</p>
+            </article>
+            {% if contact %}
+                <article class="info-card info-card-contact">
+                    <div class="info-card-top">
+                        <span class="info-icon"><i class="bi bi-geo-alt"></i></span>
+                        <span class="info-label">Aloqa</span>
+                    </div>
+                    <strong>{{ contact.phone }}</strong>
+                    <p class="mb-1">{{ contact.address }}</p>
+                    <a href="{% url 'frontend:booking' %}" class="info-link">Hozir band qilish</a>
+                </article>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="section-pad">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Asosiy xizmatlar</p>
+                <h2 class="section-title">Mijozlar eng ko'p tanlaydigan xizmatlar</h2>
+            </div>
+            <a href="{% url 'frontend:services' %}" class="section-link">Barchasi</a>
+        </div>
+        <div class="row g-4">
+            {% for service in services %}
+                <div class="col-md-6 col-xl-4">
+                    <article class="service-card">
+                        <img src="{{ service.image.url }}" alt="{{ service.name }}" class="service-image">
+                        <div class="service-body">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div>
+                                    <p class="service-kicker">{{ service.title }}</p>
+                                    <h3 class="service-name">{{ service.name }}</h3>
+                                </div>
+                                <span class="price-pill">{{ service.price }}</span>
+                            </div>
+                            <p class="service-description">{{ service.description|truncatechars:120 }}</p>
+                            <div class="service-meta">
+                                <span><i class="bi bi-clock"></i> {{ service.time }}</span>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section-pad section-dark">
+    <div class="container">
+        <div class="row g-5 align-items-center">
+            <div class="col-lg-6">
+                <p class="eyebrow">Biz haqimizda</p>
+                <h2 class="section-title text-white">Sifat, atmosfera va doimiy natija.</h2>
+                {% if about %}
+                    <div class="richtext-block">{{ about.text|safe|truncatechars_html:550 }}</div>
+                {% else %}
+                    <p class="section-text">Barbershop haqida ma'lumot hali kiritilmagan.</p>
+                {% endif %}
+                <a href="{% url 'frontend:booking' %}" class="btn btn-accent mt-3">Bugun yozilish</a>
+            </div>
+            <div class="col-lg-6">
+                <div class="media-showcase">
+                    {% if about and about.image %}
+                        <img src="{{ about.image.url }}" alt="About" class="showcase-image">
+                    {% elif video and video.image %}
+                        <img src="{{ video.image.url }}" alt="{{ video.title }}" class="showcase-image">
+                    {% else %}
+                        <div class="showcase-fallback">BossBarber</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section-pad">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Ustalar</p>
+                <h2 class="section-title">Jamoamizdagi professional barberlar</h2>
+            </div>
+            <a href="{% url 'frontend:barbers' %}" class="section-link">Hammasi</a>
+        </div>
+        <div class="row g-4">
+            {% for barber in barbers %}
+                <div class="col-md-6 col-xl-3">
+                    <article class="team-card">
+                        <img src="{{ barber.image.url }}" alt="{{ barber.name }}" class="team-image">
+                        <div class="team-body">
+                            <h3 class="team-name">{{ barber.name }}</h3>
+                            <p class="team-meta">{{ barber.experience }} yil tajriba • {{ barber.age }} yosh</p>
+                            <p class="team-description">{{ barber.description|truncatechars:90 }}</p>
+                        </div>
+                    </article>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section-pad muted-section">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Galereya</p>
+                <h2 class="section-title">Interyer va ishlarimizdan lavhalar</h2>
+            </div>
+            <a href="{% url 'frontend:gallery' %}" class="section-link">Ko'proq</a>
+        </div>
+        {% if gallery %}
+            <div class="gallery-marquee-shell">
+                <div class="gallery-track gallery-track-forward">
+                    {% for item in gallery %}
+                        <div class="gallery-marquee-item">
+                            <img src="{{ item.image.url }}" alt="Gallery image">
+                        </div>
+                    {% endfor %}
+                    {% for item in gallery %}
+                        <div class="gallery-marquee-item">
+                            <img src="{{ item.image.url }}" alt="Gallery image">
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="gallery-track gallery-track-reverse">
+                    {% for item in gallery %}
+                        <div class="gallery-marquee-item">
+                            <img src="{{ item.image.url }}" alt="Gallery image">
+                        </div>
+                    {% endfor %}
+                    {% for item in gallery %}
+                        <div class="gallery-marquee-item">
+                            <img src="{{ item.image.url }}" alt="Gallery image">
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="empty-state">Galereya rasmlari hozircha mavjud emas.</div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="section-pad">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Mijoz fikrlari</p>
+                <h2 class="section-title">Biz haqimizda qoldirilgan izohlar</h2>
+            </div>
+        </div>
+        <div class="row g-4">
+            {% for review in reviews %}
+                <div class="col-md-6 col-xl-4">
+                    <article class="review-card">
+                        <div class="stars">
+                            {% for _ in "12345" %}
+                                <i class="bi bi-star{% if forloop.counter <= review.stars %}-fill{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        <p class="review-text">{{ review.comment }}</p>
+                        <strong class="review-name">{{ review.name }}</strong>
+                    </article>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="empty-state">Tasdiqlangan izohlar hozircha mavjud emas.</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% if article and article.content %}
+<section class="section-pad section-dark">
+    <div class="container">
+        <p class="eyebrow">So'nggi maqola</p>
+        <div class="article-panel">
+            {{ article.content|safe|truncatechars_html:900 }}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="section-pad cta-section">
+    <div class="container">
+        <div class="cta-box">
+            <div>
+                <p class="eyebrow">Online booking</p>
+                <h2 class="section-title mb-2">Bir necha qadamda navbat band qiling.</h2>
+                <p class="section-text mb-0">Barber, xizmat va vaqtni tanlang. Qolganini tizim hal qiladi.</p>
+            </div>
+            <a href="{% url 'frontend:booking' %}" class="btn btn-light btn-lg">Booking sahifasi</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

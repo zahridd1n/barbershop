@@ -1,0 +1,85 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}BossBarber | Xizmatlar{% endblock %}
+
+{% block content %}
+<section class="inner-hero">
+    <div class="container">
+        <p class="eyebrow">Xizmatlar</p>
+        <h1 class="inner-title">Asosiy va qo‘shimcha xizmatlar</h1>
+        <p class="inner-text">Narxlar, davomiylik va servis tavsiflari bir joyda.</p>
+    </div>
+</section>
+
+<section class="section-pad">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Asosiy xizmatlar</p>
+                <h2 class="section-title">Barbershop servis menyusi</h2>
+            </div>
+        </div>
+        <div class="row g-4">
+            {% for service in services %}
+                <div class="col-md-6 col-xl-4">
+                    <article class="service-card">
+                        <img src="{{ service.image.url }}" alt="{{ service.name }}" class="service-image">
+                        <div class="service-body">
+                            <div class="d-flex justify-content-between align-items-start gap-3">
+                                <div>
+                                    <p class="service-kicker">{{ service.title }}</p>
+                                    <h3 class="service-name">{{ service.name }}</h3>
+                                </div>
+                                <span class="price-pill">{{ service.price }}</span>
+                            </div>
+                            <p class="service-description">{{ service.description }}</p>
+                            <div class="service-meta">
+                                <span><i class="bi bi-clock"></i> {{ service.time }}</span>
+                            </div>
+                            {% if service.features.all %}
+                                <div class="chip-list">
+                                    {% for feature in service.features.all %}
+                                        <span class="feature-chip">{{ feature.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </article>
+                </div>
+            {% empty %}
+                <div class="col-12"><div class="empty-state">Xizmatlar topilmadi.</div></div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section-pad muted-section">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Qo‘shimcha xizmatlar</p>
+                <h2 class="section-title">Servisni kengaytiradigan opsiyalar</h2>
+            </div>
+        </div>
+        <div class="row g-4">
+            {% for service in dopservices %}
+                <div class="col-md-6 col-xl-4">
+                    <article class="mini-card">
+                        <img src="{{ service.image.url }}" alt="{{ service.name }}" class="mini-card-image">
+                        <div class="mini-card-body">
+                            <h3 class="service-name">{{ service.name }}</h3>
+                            <p class="service-description">{{ service.description|truncatechars:110 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="price-pill">{{ service.price }}</span>
+                                <span class="mini-meta">{{ service.time }}</span>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            {% empty %}
+                <div class="col-12"><div class="empty-state">Qo‘shimcha xizmatlar topilmadi.</div></div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

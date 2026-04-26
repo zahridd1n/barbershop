@@ -1,0 +1,234 @@
+﻿{% extends "frontend/base.html" %}
+
+{% block title %}BossBarber | Booking{% endblock %}
+
+{% block content %}
+<section class="inner-hero">
+    <div class="container">
+        <p class="eyebrow">Online booking</p>
+        <h1 class="inner-title">Navbatni sayt ichidan band qiling</h1>
+        <p class="inner-text">Barber, xizmat va vaqtni tanlang.</p>
+    </div>
+</section>
+
+<section class="section-pad">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-2"></div>
+            <div class="col-lg-8">
+                <div class="booking-panel">
+                    <form id="bookingForm" class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Barber</label>
+                            <select class="form-select form-control-custom" id="barber" required>
+                                <option value="">Tanlang</option>
+                                {% for barber in barbers %}
+                                    <option value="{{ barber.id }}">{{ barber.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Asosiy xizmat</label>
+                            <select class="form-select form-control-custom" id="service" required>
+                                <option value="">Tanlang</option>
+                                {% for service in services %}
+                                    <option value="{{ service.id }}" data-time="{{ service.time }}" data-price="{{ service.price }}">{{ service.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Qo'shimcha xizmat</label>
+                            <select class="form-select form-control-custom" id="dopservice">
+                                <option value="">Tanlanmagan</option>
+                                {% for service in dopservices %}
+                                    <option value="{{ service.id }}" data-price="{{ service.price }}">{{ service.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sana</label>
+                            <input type="date" class="form-control form-control-custom" id="bookingDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ismingiz</label>
+                            <input type="text" class="form-control form-control-custom" id="customerName" placeholder="Ali Valiyev" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefon</label>
+                            <input type="text" class="form-control form-control-custom" id="customerPhone" placeholder="+998 90 123 45 67" required>
+                        </div>
+                        <div class="col-12">
+                            <div class="booking-meta-panel">
+                                <div>
+                                    <span class="meta-label">Bo'sh vaqtlar</span>
+                                    <div id="times" class="time-slots"></div>
+                                </div>
+                                <div class="summary-box">
+                                    <span class="meta-label">Taxminiy summa</span>
+                                    <strong id="totalPrice">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <input type="hidden" id="selectedTime">
+                            <button type="submit" class="btn btn-accent btn-lg">Buyurtmani yuborish</button>
+                        </div>
+                    </form>
+                    <div id="bookingAlert" class="alert d-none mt-3" role="alert"></div>
+                </div>
+            </div>
+<!--            <div class="col-lg-5">-->
+<!--                <div class="booking-side-card">-->
+<!--                    <p class="eyebrow">Qanday ishlaydi</p>-->
+<!--                    <h3 class="section-title mb-3">Tizim mavjud API bilan ishlaydi</h3>-->
+<!--                    <div class="booking-steps">-->
+<!--                        <div><span>1</span> Barber va xizmat tanlanadi.</div>-->
+<!--                        <div><span>2</span> Sana bo'yicha bo'sh vaqtlar `/availability/` dan olinadi.</div>-->
+<!--                        <div><span>3</span> Buyurtma `/bookings/` endpointiga jo'natiladi.</div>-->
+<!--                    </div>-->
+<!--                    {% if contact %}-->
+<!--                        <div class="contact-box mt-4">-->
+<!--                            <h5>Aloqa</h5>-->
+<!--                            <p class="mb-1">{{ contact.address }}</p>-->
+<!--                            <p class="mb-0">{{ contact.phone }}</p>-->
+<!--                        </div>-->
+<!--                    {% endif %}-->
+<!--                </div>-->
+<!--            </div>-->
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const barberSelect = document.getElementById("barber");
+    const serviceSelect = document.getElementById("service");
+    const dopserviceSelect = document.getElementById("dopservice");
+    const bookingDate = document.getElementById("bookingDate");
+    const timeContainer = document.getElementById("times");
+    const selectedTimeInput = document.getElementById("selectedTime");
+    const totalPrice = document.getElementById("totalPrice");
+    const bookingForm = document.getElementById("bookingForm");
+    const bookingAlert = document.getElementById("bookingAlert");
+
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+        return match ? match[2] : null;
+    }
+
+    function parsePrice(value) {
+        const normalized = String(value || "0").replace(/[^0-9.]/g, "");
+        return Number(normalized || 0);
+    }
+
+    function updateTotal() {
+        const servicePrice = parsePrice(serviceSelect.selectedOptions[0]?.dataset.price);
+        const dopPrice = parsePrice(dopserviceSelect.selectedOptions[0]?.dataset.price);
+        totalPrice.textContent = (servicePrice + dopPrice).toLocaleString("uz-UZ");
+    }
+
+    function extractMinutes(value) {
+        if (!value) return 60;
+        const match = String(value).match(/(\d+)/);
+        return match ? Number(match[1]) : 60;
+    }
+
+    function formatDateForApi(value) {
+        const [year, month, day] = value.split("-");
+        return `${day}-${month}-${year}`;
+    }
+
+    function showAlert(message, type) {
+        bookingAlert.className = `alert alert-${type} mt-3`;
+        bookingAlert.textContent = message;
+        bookingAlert.classList.remove("d-none");
+    }
+
+    async function loadAvailableTimes() {
+        const barberId = barberSelect.value;
+        const serviceTime = extractMinutes(serviceSelect.selectedOptions[0]?.dataset.time);
+        const dateValue = bookingDate.value;
+
+        timeContainer.innerHTML = "";
+        selectedTimeInput.value = "";
+
+        if (!barberId || !dateValue) {
+            return;
+        }
+
+        const response = await fetch(`/api/api28/availability/?barber_id=${barberId}&service_time=${serviceTime}&date=${formatDateForApi(dateValue)}`);
+        const payload = await response.json();
+
+        if (!payload.success || !payload.data?.times?.length) {
+            timeContainer.innerHTML = `<div class="empty-slot">${payload.data?.message || "Bo'sh vaqt topilmadi."}</div>`;
+            return;
+        }
+
+        payload.data.times.forEach((time) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "time-slot";
+            button.textContent = time;
+            button.addEventListener("click", () => {
+                document.querySelectorAll(".time-slot").forEach((slot) => slot.classList.remove("active"));
+                button.classList.add("active");
+                selectedTimeInput.value = time;
+            });
+            timeContainer.appendChild(button);
+        });
+    }
+
+    barberSelect.addEventListener("change", loadAvailableTimes);
+    serviceSelect.addEventListener("change", () => {
+        updateTotal();
+        loadAvailableTimes();
+    });
+    dopserviceSelect.addEventListener("change", updateTotal);
+    bookingDate.addEventListener("change", loadAvailableTimes);
+
+    bookingForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        if (!selectedTimeInput.value) {
+            showAlert("Avval bo'sh vaqt tanlang.", "warning");
+            return;
+        }
+
+        const payload = {
+            barber_id: barberSelect.value,
+            service_id: serviceSelect.value,
+            dopservice_id: dopserviceSelect.value || null,
+            date: `${bookingDate.value}T${selectedTimeInput.value}:00`,
+            customer_name: document.getElementById("customerName").value,
+            customer_phone: document.getElementById("customerPhone").value,
+            service_time: extractMinutes(serviceSelect.selectedOptions[0]?.dataset.time),
+            price: totalPrice.textContent,
+        };
+
+        const response = await fetch("/api/api28/bookings/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken") || "",
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showAlert("Buyurtma muvaffaqiyatli yuborildi.", "success");
+            bookingForm.reset();
+            timeContainer.innerHTML = "";
+            totalPrice.textContent = "0";
+            selectedTimeInput.value = "";
+            return;
+        }
+
+        showAlert(result.message || "Buyurtma yuborishda xatolik yuz berdi.", "danger");
+    });
+
+    updateTotal();
+</script>
+{% endblock %}

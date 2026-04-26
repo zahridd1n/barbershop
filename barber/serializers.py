@@ -76,7 +76,7 @@ class BarberSerializer(serializers.ModelSerializer):
 class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Booking
-        fields = ['barber', 'service', 'dopservice', 'date', 'customer_name', 'customer_phone']
+        fields = ['barber', 'service', 'dopservice', 'date', 'customer_name', 'customer_phone', 'service_time', 'price']
 
 class RichtextSerializer(serializers.ModelSerializer):
     class Meta:

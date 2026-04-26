@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}BossBarber{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{% static 'frontend/css/site.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="page-shell">
+        <nav class="navbar navbar-expand-lg navbar-dark site-navbar py-3">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-3" href="{% url 'frontend:home' %}">
+                    {% if contact and contact.logo %}
+                        <img src="{{ contact.logo.url }}" alt="Logo" class="brand-logo">
+                    {% endif %}
+                    <span class="brand-text">BossBarber</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+                        <li class="nav-item"><a class="nav-link" href="{% url 'frontend:home' %}">Bosh sahifa</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'frontend:services' %}">Xizmatlar</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'frontend:barbers' %}">Ustalar</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'frontend:gallery' %}">Galereya</a></li>
+                        <li class="nav-item ms-lg-2"><a class="btn btn-accent" href="{% url 'frontend:booking' %}">Buyurtma</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="site-footer">
+            <div class="container py-5">
+                <div class="row g-4 align-items-start">
+                    <div class="col-lg-4">
+                        <p class="eyebrow mb-2">BossBarber</p>
+                        <h3 class="footer-title">Zamonaviy uslub, aniq servis va qulay online booking.</h3>
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <h5 class="footer-subtitle">Aloqa</h5>
+                        {% if contact %}
+                            <p class="footer-text mb-1">{{ contact.address }}</p>
+                            <p class="footer-text mb-0">{{ contact.phone }}</p>
+                        {% else %}
+                            <p class="footer-text mb-0">Kontakt ma'lumotlari mavjud emas.</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 col-lg-2">
+                        <h5 class="footer-subtitle">Sahifalar</h5>
+                        <div class="footer-links">
+                            <a href="{% url 'frontend:services' %}">Xizmatlar</a>
+                            <a href="{% url 'frontend:barbers' %}">Ustalar</a>
+                            <a href="{% url 'frontend:gallery' %}">Galereya</a>
+                            <a href="{% url 'frontend:booking' %}">Buyurtma</a>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <h5 class="footer-subtitle">Ijtimoiy tarmoqlar</h5>
+                        <div class="social-links">
+                            {% for social in socials %}
+                                <a href="{{ social.link }}" target="_blank" rel="noopener">{{ social.name }}</a>
+                            {% empty %}
+                                <span class="footer-text">Hozircha mavjud emas.</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,8 +1,8 @@
 
 
 
-BOT_TOKEN = "8033657841:AAHHpzPug1FdMZ9rhDLoEW6DA0PQKo7jojQ"
-GROUP_CHAT_ID = "-1002387002565"
+BOT_TOKEN = "8626587214:AAEnsg7YxPYuhy-6eA8nz_XpFTFpziyuyH0"
+GROUP_CHAT_ID = "-5101845118"
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'barber',
+    'frontend',
     'rest_framework',
     'ckeditor_uploader',
     'ckeditor',

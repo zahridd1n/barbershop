@@ -1,0 +1,38 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}BossBarber | Ustalar{% endblock %}
+
+{% block content %}
+<section class="inner-hero">
+    <div class="container">
+        <p class="eyebrow">Jamoa</p>
+        <h1 class="inner-title">Siz bilan ishlaydigan barberlar</h1>
+        <p class="inner-text">Har biri o‘z uslubi va tajribasi bilan ajralib turadi.</p>
+    </div>
+</section>
+
+<section class="section-pad">
+    <div class="container">
+        <div class="row g-4">
+            {% for barber in barbers %}
+                <div class="col-md-6 col-xl-4">
+                    <article class="team-card h-100">
+                        <img src="{{ barber.image.url }}" alt="{{ barber.name }}" class="team-image large">
+                        <div class="team-body">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <h3 class="team-name mb-0">{{ barber.name }}</h3>
+                                <span class="feature-chip">{{ barber.experience }} yil</span>
+                            </div>
+                            <p class="team-meta">{{ barber.age }} yosh</p>
+                            <p class="team-description">{{ barber.description }}</p>
+                            <a href="{% url 'frontend:booking' %}" class="btn btn-accent mt-3">Shu ustaga yozilish</a>
+                        </div>
+                    </article>
+                </div>
+            {% empty %}
+                <div class="col-12"><div class="empty-state">Ustalar topilmadi.</div></div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

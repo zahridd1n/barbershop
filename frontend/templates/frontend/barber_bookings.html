@@ -1,0 +1,91 @@
+{% extends "frontend/base.html" %}
+
+{% block title %}BossBarber | {{ selected_barber.name }}{% endblock %}
+
+{% block content %}
+<section class="inner-hero barber-room-hero">
+    <div class="container">
+        <p class="eyebrow">Barber room</p>
+        <div class="barber-room-head">
+            <div>
+                <h1 class="inner-title">{{ selected_barber.name }} uchun bookinglar</h1>
+            </div>
+            {% if selected_barber.image %}
+                <img src="{{ selected_barber.image.url }}" alt="{{ selected_barber.name }}" class="barber-room-avatar">
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="section-pad pt-0">
+    <div class="container">
+        <div class="barber-stats-grid">
+            <div class="info-card">
+                <div class="info-card-top">
+                    <span class="info-icon"><i class="bi bi-calendar-check"></i></span>
+                    <span class="info-label">Bugun</span>
+                </div>
+                <strong>{{ today_bookings_count }}</strong>
+                <p class="mb-0">Bugungi bookinglar soni</p>
+            </div>
+            <div class="info-card">
+                <div class="info-card-top">
+                    <span class="info-icon"><i class="bi bi-clock-history"></i></span>
+                    <span class="info-label">Navbat</span>
+                </div>
+                <strong>{{ upcoming_total }}</strong>
+                <p class="mb-0">Kelayotgan jami bronlar</p>
+            </div>
+            <div class="info-card">
+                <div class="info-card-top">
+                    <span class="info-icon"><i class="bi bi-cash-stack"></i></span>
+                    <span class="info-label">Summa</span>
+                </div>
+                <strong>{{ estimated_revenue|floatformat:0 }}</strong>
+                <p class="mb-0">Kelayotgan bookinglar bo'yicha taxminiy tushum</p>
+            </div>
+        </div>
+
+        {% if booking_groups %}
+            <div class="barber-day-list mt-4">
+                {% for group in booking_groups %}
+                    <section class="barber-day-card">
+                        <div class="barber-day-header">
+                            <div>
+                                <p class="eyebrow mb-2">{{ group.items|length }} ta booking</p>
+                                <h3 class="section-title mb-0">{{ group.label }}</h3>
+                            </div>
+                        </div>
+
+                        <div class="barber-bookings-stack">
+                            {% for booking in group.items %}
+                                <article class="barber-booking-item">
+                                    <div class="booking-time-pill">
+                                        <strong>{{ booking.local_dt|date:"H:i" }}</strong>
+                                        <span>{{ booking.end_dt|date:"H:i" }} gacha</span>
+                                    </div>
+                                    <div class="booking-main-copy">
+                                        <h4>{{ booking.customer_name }}</h4>
+                                        <p class="mb-2">{{ booking.service.name }}{% if booking.dopservice %} + {{ booking.dopservice.name }}{% endif %}</p>
+                                        <div class="booking-mini-meta">
+                                            <span><i class="bi bi-telephone"></i> {{ booking.customer_phone }}</span>
+                                            <span><i class="bi bi-stopwatch"></i> {{ booking.service_time }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="booking-price-pill">{{ booking.total_price|floatformat:0 }}</div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="booking-panel mt-4">
+                <div class="empty-state">
+                    Hozirdan boshlab kelayotgan bookinglar topilmadi.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

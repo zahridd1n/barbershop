@@ -67,8 +67,8 @@ class Review(models.Model):
 
 
 class Banner(models.Model):
-    image = models.ImageField(upload_to='banners/', verbose_name="Banner rasmi")
-    image1 = models.ImageField(upload_to='banners/', verbose_name="Ikkinchi banner rasmi")
+    image = models.ImageField(upload_to='banners/', verbose_name="Birinchi banner rasmi", blank=True, null=True)
+    image1 = models.ImageField(upload_to='banners/', verbose_name="Ikkinchi banner rasmi", blank=True, null=True)
 
     class Meta:
         verbose_name = "Banner"

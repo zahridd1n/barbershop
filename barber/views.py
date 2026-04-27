@@ -322,17 +322,19 @@ class BookingView(APIView):
             day = local_datetime.strftime('%d')
             time_value = local_datetime.strftime('%H:%M')
 
+            dop_line = "➕ Qo'shimcha xizmat: " + dopservice_name if dopservice_name else ''
+
             text = f"""Saytdan xabar:\n
                 🆕 Yangi buyurtma
                 💈 Barber: {barber.name}
                 💼 Xizmat: {service.name}
-                {'➕ Qo\'shimcha xizmat: ' + dopservice_name if dopservice_name else ''}
+                {dop_line}
                 ⏳ Xizmat davomiyligi: {service_time_minutes} minut
                 📅 Sana: {day} - {month_name}
                 ⏰ Vaqt: {time_value}
                 👤 Buyurtmachi ismi: {customer_name}
                 📞 Telefon: {customer_phone}
-                {'➕ Qo\'shimcha xizmat: ' + dopservice_name if dopservice_name else ''}
+                {dop_line}
 
                 Summa: {price}
 

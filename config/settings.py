@@ -63,7 +63,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -85,17 +85,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'barber',
-        'USER': 'barber',
-        'PASSWORD': '6914760a',
-        # 'HOST': 'localhost',
-        'HOST': '31.129.108.176',
-
-        'PORT': '5432',
-        'CONN_MAX_AGE': 600,
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# PostgreSQL (masofadagi server):
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'barber',
+#         'USER': 'barber',
+#         'PASSWORD': '6914760a',
+#         'HOST': '31.129.108.176',
+#         'PORT': '5432',
+#         'CONN_MAX_AGE': 600,
+#     }
+# }
 
 
 # Password validation

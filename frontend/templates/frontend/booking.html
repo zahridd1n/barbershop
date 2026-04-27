@@ -1,6 +1,10 @@
-﻿{% extends "frontend/base.html" %}
+{% extends "frontend/base.html" %}
 
 {% block title %}BossBarber | Booking{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
 
 {% block content %}
 <section class="inner-hero">
@@ -47,7 +51,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Sana</label>
-                            <input type="date" class="form-control form-control-custom" id="bookingDate" required>
+                            <input type="text" class="form-control form-control-custom" id="bookingDate" placeholder="Kunni tanlang" required readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Ismingiz</label>
@@ -101,6 +105,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     const barberSelect = document.getElementById("barber");
     const serviceSelect = document.getElementById("service");
@@ -111,6 +116,30 @@
     const totalPrice = document.getElementById("totalPrice");
     const bookingForm = document.getElementById("bookingForm");
     const bookingAlert = document.getElementById("bookingAlert");
+
+    // O'zbek lotin alifbosidagi locale
+    const uzLatinLocale = {
+        firstDayOfWeek: 1,
+        weekdays: {
+            shorthand: ["Ya", "Du", "Se", "Cho", "Pa", "Ju", "Sha"],
+            longhand: ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"]
+        },
+        months: {
+            shorthand: ["Yan", "Fev", "Mar", "Apr", "May", "Iyun", "Iyul", "Avg", "Sen", "Okt", "Noy", "Dek"],
+            longhand: ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"]
+        }
+    };
+
+    // Flatpickr — chiroyli kalendar, o'tmishdagi kunlar bloklangan
+    const fp = flatpickr(bookingDate, {
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        locale: uzLatinLocale,
+        disableMobile: true,
+        onChange: function() {
+            loadAvailableTimes();
+        }
+    });
 
     function getCookie(name) {
         const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
@@ -230,5 +259,132 @@
     });
 
     updateTotal();
+
+    // ── CUSTOM SELECT DROPDOWN ──────────────────────────
+    const ARROW_SVG = `<svg class="cs-arrow" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+    function initCustomSelect(selectEl) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "custom-select-wrapper";
+        selectEl.parentNode.insertBefore(wrapper, selectEl);
+        wrapper.appendChild(selectEl);
+
+        // Trigger button
+        const trigger = document.createElement("div");
+        trigger.className = "custom-select-trigger";
+        const firstOption = selectEl.options[0];
+        const labelSpan = document.createElement("span");
+        labelSpan.textContent = firstOption ? firstOption.textContent : "";
+        if (!firstOption || firstOption.value === "") labelSpan.className = "cs-placeholder";
+        trigger.innerHTML = "";
+        trigger.appendChild(labelSpan);
+        trigger.insertAdjacentHTML("beforeend", ARROW_SVG);
+        wrapper.appendChild(trigger);
+
+        // Options panel
+        const optionsPanel = document.createElement("div");
+        optionsPanel.className = "custom-select-options";
+
+        Array.from(selectEl.options).forEach((opt, idx) => {
+            const item = document.createElement("div");
+            item.className = "custom-select-option";
+            if (opt.value === "") item.classList.add("placeholder-opt");
+            if (idx === selectEl.selectedIndex) item.classList.add("selected");
+            item.textContent = opt.textContent;
+            item.dataset.value = opt.value;
+            // Copy data attrs
+            for (const key in opt.dataset) {
+                item.dataset[key] = opt.dataset[key];
+            }
+
+            item.addEventListener("click", () => {
+                // Update native select
+                selectEl.value = opt.value;
+                // Update trigger label
+                labelSpan.textContent = opt.textContent;
+                labelSpan.className = opt.value === "" ? "cs-placeholder" : "";
+                // Update selected state
+                optionsPanel.querySelectorAll(".custom-select-option").forEach(o => o.classList.remove("selected"));
+                item.classList.add("selected");
+                // Close dropdown
+                closeDropdown();
+                // Fire change event
+                selectEl.dispatchEvent(new Event("change", { bubbles: true }));
+            });
+
+            optionsPanel.appendChild(item);
+        });
+
+        wrapper.appendChild(optionsPanel);
+
+        // Toggle
+        function toggleDropdown(e) {
+            e.stopPropagation();
+            const isOpen = optionsPanel.classList.contains("show");
+            closeAllDropdowns();
+            if (!isOpen) {
+                optionsPanel.classList.add("show");
+                trigger.classList.add("open");
+            }
+        }
+
+        function closeDropdown() {
+            optionsPanel.classList.remove("show");
+            trigger.classList.remove("open");
+        }
+
+        trigger.addEventListener("click", toggleDropdown);
+
+        // Sync: when select value changes programmatically (e.g. form.reset)
+        const observer = new MutationObserver(() => {
+            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            if (selectedOpt) {
+                labelSpan.textContent = selectedOpt.textContent;
+                labelSpan.className = selectedOpt.value === "" ? "cs-placeholder" : "";
+                optionsPanel.querySelectorAll(".custom-select-option").forEach(o => {
+                    o.classList.toggle("selected", o.dataset.value === selectedOpt.value);
+                });
+            }
+        });
+        observer.observe(selectEl, { attributes: true, childList: true });
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll(".custom-select-options.show").forEach(p => p.classList.remove("show"));
+        document.querySelectorAll(".custom-select-trigger.open").forEach(t => t.classList.remove("open"));
+    }
+
+    // Close all when clicking outside
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest(".custom-select-wrapper")) {
+            closeAllDropdowns();
+        }
+    });
+
+    // Initialize all selects
+    document.querySelectorAll("#bookingForm select").forEach(initCustomSelect);
+
+    // Override form reset to sync custom selects
+    const originalReset = bookingForm.reset.bind(bookingForm);
+    bookingForm.reset = function() {
+        originalReset();
+        setTimeout(() => {
+            document.querySelectorAll("#bookingForm select").forEach(sel => {
+                sel.dispatchEvent(new Event("change", { bubbles: true }));
+                const wrapper = sel.closest(".custom-select-wrapper");
+                if (wrapper) {
+                    const label = wrapper.querySelector(".custom-select-trigger span");
+                    const firstOpt = sel.options[0];
+                    if (label && firstOpt) {
+                        label.textContent = firstOpt.textContent;
+                        label.className = firstOpt.value === "" ? "cs-placeholder" : "";
+                    }
+                    wrapper.querySelectorAll(".custom-select-option").forEach((o, i) => {
+                        o.classList.toggle("selected", i === 0);
+                    });
+                }
+            });
+        }, 10);
+    };
 </script>
 {% endblock %}

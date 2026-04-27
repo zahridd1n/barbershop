@@ -1,8 +1,9 @@
 
 
 
-BOT_TOKEN = "8626587214:AAEnsg7YxPYuhy-6eA8nz_XpFTFpziyuyH0"
-GROUP_CHAT_ID = "-5101845118"
+BOT_TOKEN = "7768144078:AAEsWuKvlQr1fcA2umEcWy-oQTxOlxftyT0"
+ADMIN_CHAT_ID = "6990611858"
+SITE_URL = "https://wavy-vaguely-starlet.ngrok-free.dev"
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'barber',
     'frontend',
+    'tgbot',
     'rest_framework',
     'ckeditor_uploader',
     'ckeditor',
@@ -45,6 +47,11 @@ CKEDITOR_UPLOAD_PATH = "uploads/"
 CKEDITOR_RESTRICT_BY_USER = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    'https://wavy-vaguely-starlet.ngrok-free.dev',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://wavy-vaguely-starlet.ngrok-free.dev',
 ]
 
 MIDDLEWARE = [

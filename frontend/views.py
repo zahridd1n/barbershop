@@ -36,7 +36,7 @@ class HomeView(SiteDataMixin, TemplateView):
                 "primary_banner": primary_banner,
                 "services": self.safe_query(lambda: list(models.Service.objects.prefetch_related("features").all()[:6]), []),
                 "dopservices": self.safe_query(lambda: list(models.DopService.objects.all()[:6]), []),
-                "barbers": self.safe_query(lambda: list(models.Barber.objects.all()[:4]), []),
+                "barbers": self.safe_query(lambda: list(models.Barber.objects.filter(is_approved=True)[:4]), []),
                 "reviews": self.safe_query(lambda: list(models.Review.objects.filter(status=True)[:6]), []),
                 "gallery": self.safe_query(lambda: list(models.Gallery.objects.order_by("-date_upload")[:8]), []),
                 "about": self.safe_query(lambda: models.About.objects.first()),
@@ -90,9 +90,9 @@ class BookingView(SiteDataMixin, TemplateView):
         context.update(self.get_site_context())
         context.update(
             {
-                "barbers": self.safe_query(lambda: list(models.Barber.objects.all()), []),
-                "services": self.safe_query(lambda: list(models.Service.objects.all()), []),
-                "dopservices": self.safe_query(lambda: list(models.DopService.objects.all()), []),
+                "barbers": self.safe_query(lambda: list(models.Barber.objects.filter(is_approved=True)), []),
+                "services": [],
+                "dopservices": [],
             }
         )
         return context

@@ -4,7 +4,10 @@ from django.core.exceptions import ValidationError
 import re
 from django.core.validators import RegexValidator 
 
+from django.contrib.auth.models import User
+
 class Service(models.Model):
+    barber = models.ForeignKey('Barber', on_delete=models.CASCADE, related_name='services', verbose_name="Sartarosh", null=True)
     title = models.TextField(verbose_name="Sarlavhani kiriting")
     name = models.CharField(max_length=200, verbose_name="Xizmat nomi")
     description = models.TextField(verbose_name="Tavsifi")
@@ -37,6 +40,7 @@ class Feature(models.Model):
 
 
 class DopService(models.Model):
+    barber = models.ForeignKey('Barber', on_delete=models.CASCADE, related_name='dopservices', verbose_name="Sartarosh", null=True)
     title = models.TextField(verbose_name="Sarlavhani kiriting")
     name = models.CharField(max_length=200, verbose_name="Xizmat nomi")
     description = models.TextField(verbose_name="Tavsifi")
@@ -85,6 +89,7 @@ class About(models.Model):
 
 
 class Gallery(models.Model):
+    barber = models.ForeignKey('Barber', on_delete=models.CASCADE, related_name='gallery', null=True, blank=True, verbose_name="Sartarosh")
     image = models.ImageField(upload_to='gallery/', verbose_name="Rasm")
     date_upload = models.DateTimeField(auto_now_add=True, verbose_name="Yuklangan sana")
 
@@ -94,6 +99,9 @@ class Gallery(models.Model):
 
 
 class Barber(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Django foydalanuvchi")
+    telegram_id = models.CharField(max_length=50, blank=True, null=True, unique=True, verbose_name="Telegram ID")
+    is_approved = models.BooleanField(default=False, verbose_name="Tasdiqlangan")
     name = models.CharField(max_length=255, verbose_name="Ism")
     experience = models.PositiveIntegerField(verbose_name="Tajriba yillari")
     description = models.TextField(verbose_name="Tavsif")

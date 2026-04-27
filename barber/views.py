@@ -26,7 +26,11 @@ class ServiceView(APIView):
                     'message': 'Xizmat topilmadi'
                 }, status=status.HTTP_404_NOT_FOUND)
 
-        services = models.Service.objects.all()
+        barber_id = request.GET.get('barber_id')
+        if barber_id:
+            services = models.Service.objects.filter(barber_id=barber_id)
+        else:
+            services = models.Service.objects.all()
         services_sr = serializers.ServiceSerializer(services, many=True, context={'request': request})
 
         return Response({
@@ -57,7 +61,11 @@ class DopServiceView(APIView):
                     'message': 'Xizmat topilmadi'
                 }, status=status.HTTP_404_NOT_FOUND)
 
-        services = models.DopService.objects.all()
+        barber_id = request.GET.get('barber_id')
+        if barber_id:
+            services = models.DopService.objects.filter(barber_id=barber_id)
+        else:
+            services = models.DopService.objects.all()
         services_sr = serializers.DopServiceSerializer(services, many=True, context={'request': request})
 
         return Response({
@@ -122,7 +130,7 @@ class Header(APIView):
 XURMATLI ADMIN, SAYTDA YANGI IZOH MAVJUD!"""
 
             encoded_text = urllib.parse.quote_plus(text)
-            url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage?chat_id={GROUP_CHAT_ID}&text={encoded_text}'
+            url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage?chat_id={ADMIN_CHAT_ID}&text={encoded_text}'
             response = requests.get(url)
             if response.status_code != 200:
                 print(f"Error: {response.status_code} - {response.text}")
@@ -266,7 +274,7 @@ class AvailableTimes(APIView):
 from pytz import timezone
 
 uzbekistan_tz = timezone('Asia/Tashkent')
-from config.settings import BOT_TOKEN, GROUP_CHAT_ID
+from config.settings import BOT_TOKEN, ADMIN_CHAT_ID
 import requests
 import urllib.parse
 import locale
@@ -341,7 +349,8 @@ class BookingView(APIView):
 XURMATLI ADMIN, SAYTDA YANGI BUYURTMA MAVJUD!"""
 
             encoded_text = urllib.parse.quote_plus(text)
-            url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage?chat_id={GROUP_CHAT_ID}&text={encoded_text}'
+            chat_id = barber.telegram_id if barber.telegram_id else ADMIN_CHAT_ID
+            url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage?chat_id={chat_id}&text={encoded_text}'
             response = requests.get(url)
             if response.status_code != 200:
                 print(f"Error: {response.status_code} - {response.text}")

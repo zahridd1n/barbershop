@@ -22,6 +22,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('ckeditor/', include('ckeditor_uploader.urls')),
+    path('bot/', include('tgbot.urls')),
     path('', include('frontend.urls')),
 
     path('api/', include([

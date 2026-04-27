@@ -208,7 +208,50 @@
         });
     }
 
-    barberSelect.addEventListener("change", loadAvailableTimes);
+    async function loadServices() {
+        const barberId = barberSelect.value;
+        if (!barberId) {
+            serviceSelect.innerHTML = '<option value="">Tanlang</option>';
+            dopserviceSelect.innerHTML = '<option value="">Tanlanmagan</option>';
+            reinitCustomSelects();
+            return;
+        }
+
+        const [svcRes, dopRes] = await Promise.all([
+            fetch(`/api/api28/services/?barber_id=${barberId}`),
+            fetch(`/api/api28/dopservices/?barber_id=${barberId}`)
+        ]);
+        
+        const svcData = await svcRes.json();
+        const dopData = await dopRes.json();
+
+        if (svcData.success) {
+            serviceSelect.innerHTML = '<option value="">Tanlang</option>' + 
+                svcData.data.services.map(s => `<option value="${s.id}" data-time="${s.time}" data-price="${s.price}">${s.name}</option>`).join("");
+        }
+
+        if (dopData.success) {
+            dopserviceSelect.innerHTML = '<option value="">Tanlanmagan</option>' + 
+                dopData.data.services.map(s => `<option value="${s.id}" data-price="${s.price}">${s.name}</option>`).join("");
+        }
+        
+        reinitCustomSelects();
+        updateTotal();
+        loadAvailableTimes();
+    }
+
+    function reinitCustomSelects() {
+        // Remove existing wrappers
+        document.querySelectorAll(".custom-select-wrapper").forEach(wrapper => {
+            const select = wrapper.querySelector("select");
+            wrapper.parentNode.insertBefore(select, wrapper);
+            wrapper.remove();
+        });
+        // Reinitialize
+        document.querySelectorAll("#bookingForm select").forEach(initCustomSelect);
+    }
+
+    barberSelect.addEventListener("change", loadServices);
     serviceSelect.addEventListener("change", () => {
         updateTotal();
         loadAvailableTimes();
@@ -272,10 +315,10 @@
         // Trigger button
         const trigger = document.createElement("div");
         trigger.className = "custom-select-trigger";
-        const firstOption = selectEl.options[0];
+        const selectedOption = selectEl.options[selectEl.selectedIndex] || selectEl.options[0];
         const labelSpan = document.createElement("span");
-        labelSpan.textContent = firstOption ? firstOption.textContent : "";
-        if (!firstOption || firstOption.value === "") labelSpan.className = "cs-placeholder";
+        labelSpan.textContent = selectedOption ? selectedOption.textContent : "";
+        if (!selectedOption || selectedOption.value === "") labelSpan.className = "cs-placeholder";
         trigger.innerHTML = "";
         trigger.appendChild(labelSpan);
         trigger.insertAdjacentHTML("beforeend", ARROW_SVG);
@@ -325,12 +368,14 @@
             if (!isOpen) {
                 optionsPanel.classList.add("show");
                 trigger.classList.add("open");
+                wrapper.style.zIndex = "105";
             }
         }
 
         function closeDropdown() {
             optionsPanel.classList.remove("show");
             trigger.classList.remove("open");
+            wrapper.style.zIndex = "";
         }
 
         trigger.addEventListener("click", toggleDropdown);
@@ -352,6 +397,7 @@
     function closeAllDropdowns() {
         document.querySelectorAll(".custom-select-options.show").forEach(p => p.classList.remove("show"));
         document.querySelectorAll(".custom-select-trigger.open").forEach(t => t.classList.remove("open"));
+        document.querySelectorAll(".custom-select-wrapper").forEach(w => w.style.zIndex = "");
     }
 
     // Close all when clicking outside

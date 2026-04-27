@@ -161,3 +161,15 @@ MEDIA_ROOT = BASE_DIR / 'media'  # To'g'rilangan joy
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Barber Dashboard auth redirects
+LOGIN_URL = '/dashboard/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/dashboard/login/'
+
+# DRF — session auth for dashboard, no auth for public API
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+}
+

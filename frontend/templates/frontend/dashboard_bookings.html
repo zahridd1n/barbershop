@@ -1,0 +1,84 @@
+{% extends "frontend/dashboard_base.html" %}
+
+{% block title %}Buyurtmalar | Dashboard{% endblock %}
+{% block page_title %}Buyurtmalar tarixi{% endblock %}
+
+{% block content %}
+<div class="dash-section">
+    <!-- STATISTIKA -->
+    <div class="dash-stats-grid">
+        <div class="dash-stat-card">
+            <div class="dash-stat-icon"><i class="bi bi-calendar-check"></i></div>
+            <div>
+                <span class="dash-stat-label">Bugun</span>
+                <strong class="dash-stat-value">{{ today_bookings_count }}</strong>
+                <span class="dash-stat-sub">buyurtma</span>
+            </div>
+        </div>
+        <div class="dash-stat-card">
+            <div class="dash-stat-icon"><i class="bi bi-clock-history"></i></div>
+            <div>
+                <span class="dash-stat-label">Kelayotgan</span>
+                <strong class="dash-stat-value">{{ upcoming_total }}</strong>
+                <span class="dash-stat-sub">jami booking</span>
+            </div>
+        </div>
+        <div class="dash-stat-card">
+            <div class="dash-stat-icon"><i class="bi bi-cash-stack"></i></div>
+            <div>
+                <span class="dash-stat-label">Tushum</span>
+                <strong class="dash-stat-value">{{ estimated_revenue|floatformat:0 }}</strong>
+                <span class="dash-stat-sub">so'm</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- BUYURTMALAR RO'YXATI -->
+    {% if booking_groups %}
+        <div class="dash-bookings-list">
+            {% for group in booking_groups %}
+                <div class="dash-booking-group">
+                    <div class="dash-booking-group-header">
+                        <div class="dash-booking-date">
+                            <i class="bi bi-calendar3"></i>
+                            <span>{{ group.label }}</span>
+                        </div>
+                        <span class="dash-booking-count">{{ group.items|length }} ta</span>
+                    </div>
+
+                    {% for booking in group.items %}
+                        <div class="dash-booking-item">
+                            <div class="dash-booking-time">
+                                <strong>{{ booking.local_dt|date:"H:i" }}</strong>
+                                <span>{{ booking.end_dt|date:"H:i" }}</span>
+                            </div>
+                            <div class="dash-booking-info">
+                                <h4>{{ booking.customer_name }}</h4>
+                                <p>
+                                    {{ booking.service.name }}
+                                    {% if booking.dopservice %}
+                                        <span class="dash-booking-dop">+ {{ booking.dopservice.name }}</span>
+                                    {% endif %}
+                                </p>
+                                <div class="dash-booking-meta">
+                                    <span><i class="bi bi-telephone"></i> {{ booking.customer_phone }}</span>
+                                    <span><i class="bi bi-stopwatch"></i> {{ booking.service_time }}</span>
+                                </div>
+                            </div>
+                            <div class="dash-booking-price">
+                                {{ booking.total_price|floatformat:0 }} <small>so'm</small>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="dash-empty dash-empty-large">
+            <i class="bi bi-calendar-x"></i>
+            <h3>Buyurtmalar topilmadi</h3>
+            <p>Hozirdan boshlab kelayotgan buyurtmalar bu yerda ko'rinadi.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

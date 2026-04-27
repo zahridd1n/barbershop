@@ -29,6 +29,11 @@
                                 <div>
                                     <p class="service-kicker">{{ service.title }}</p>
                                     <h3 class="service-name">{{ service.name }}</h3>
+                                    {% if service.barber %}
+                                    <a href="{% url 'frontend:barber-detail' service.barber.id %}" class="badge bg-dark text-light border border-secondary text-decoration-none mt-2 d-inline-block">
+                                        <i class="bi bi-person"></i> {{ service.barber.name }}
+                                    </a>
+                                    {% endif %}
                                 </div>
                                 <span class="price-pill">{{ service.price }}</span>
                             </div>
@@ -68,6 +73,11 @@
                         <img src="{{ service.image.url }}" alt="{{ service.name }}" class="mini-card-image">
                         <div class="mini-card-body">
                             <h3 class="service-name">{{ service.name }}</h3>
+                            {% if service.barber %}
+                            <a href="{% url 'frontend:barber-detail' service.barber.id %}" class="badge bg-dark text-light border border-secondary text-decoration-none mb-2 d-inline-block">
+                                <i class="bi bi-person"></i> {{ service.barber.name }}
+                            </a>
+                            {% endif %}
                             <p class="service-description">{{ service.description|truncatechars:110 }}</p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="price-pill">{{ service.price }}</span>

@@ -1,0 +1,177 @@
+{% extends "frontend/dashboard_base.html" %}
+
+{% block title %}Portfolio | Dashboard{% endblock %}
+{% block page_title %}Portfolio boshqaruvi{% endblock %}
+
+{% block content %}
+<div class="dash-section">
+    <div class="dash-section-header">
+        <h3>Portfolio rasmlari</h3>
+        <label class="dash-btn dash-btn-primary" for="galleryUpload">
+            <i class="bi bi-cloud-upload"></i> Rasm yuklash
+        </label>
+        <input type="file" id="galleryUpload" accept="image/*" multiple hidden>
+    </div>
+
+    <!-- DROP ZONE -->
+    <div class="dash-dropzone" id="galleryDropZone">
+        <i class="bi bi-cloud-arrow-up"></i>
+        <p>Rasmlarni shu yerga tashlang yoki <strong>yuklash</strong> tugmasini bosing</p>
+        <span>JPG, PNG — max 10 MB</span>
+    </div>
+
+    <!-- UPLOAD PROGRESS -->
+    <div class="dash-upload-progress" id="uploadProgress" style="display:none;">
+        <div class="dash-progress-bar">
+            <div class="dash-progress-fill" id="progressFill"></div>
+        </div>
+        <span id="progressText">Yuklanmoqda...</span>
+    </div>
+
+    <!-- GALLERY GRID -->
+    <div class="dash-gallery-grid" id="galleryGrid">
+        <div class="dash-loading"><i class="bi bi-arrow-repeat spin"></i> Yuklanmoqda...</div>
+    </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="dash-modal-overlay" id="deleteModal">
+    <div class="dash-modal dash-modal-sm">
+        <div class="dash-modal-header">
+            <h3>Rasmni o'chirish</h3>
+            <button class="dash-modal-close" onclick="closeDeleteModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <p class="dash-modal-text">Bu rasmni o'chirishni xohlaysizmi?</p>
+        <div class="dash-modal-actions">
+            <button class="dash-btn dash-btn-ghost" onclick="closeDeleteModal()">Bekor qilish</button>
+            <button class="dash-btn dash-btn-danger" id="confirmDeleteBtn">
+                <i class="bi bi-trash"></i> O'chirish
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const csrfToken = getCookie('csrftoken');
+    const galleryUpload = document.getElementById('galleryUpload');
+    const dropZone = document.getElementById('galleryDropZone');
+    const galleryGrid = document.getElementById('galleryGrid');
+
+    // ── LOAD GALLERY ──
+    async function loadGallery() {
+        const res = await fetch('/api/api28/dashboard/gallery/');
+        const data = await res.json();
+        renderGallery(data.data || []);
+    }
+
+    function renderGallery(items) {
+        if (!items.length) {
+            galleryGrid.innerHTML = '<div class="dash-empty"><i class="bi bi-images"></i><p>Hozircha rasmlar yo\'q. Portfoliongizga rasmlar qo\'shing!</p></div>';
+            return;
+        }
+        galleryGrid.innerHTML = items.map(item => `
+            <div class="dash-gallery-item" data-id="${item.id}">
+                <img src="${item.image}" alt="Portfolio">
+                <div class="dash-gallery-overlay">
+                    <button class="dash-gallery-delete" onclick="deleteImage(${item.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ── UPLOAD ──
+    async function uploadImages(files) {
+        const progress = document.getElementById('uploadProgress');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        progress.style.display = 'block';
+        progressFill.style.width = '0%';
+
+        const formData = new FormData();
+        for (let file of files) {
+            formData.append('image', file);
+        }
+
+        try {
+            progressFill.style.width = '50%';
+            progressText.textContent = `${files.length} ta rasm yuklanmoqda...`;
+
+            const res = await fetch('/api/api28/dashboard/gallery/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                body: formData,
+            });
+            const result = await res.json();
+
+            progressFill.style.width = '100%';
+
+            if (result.success) {
+                showToast(result.message, 'success');
+                loadGallery();
+            } else {
+                showToast('Yuklashda xatolik', 'error');
+            }
+        } catch (err) {
+            showToast('Tarmoq xatosi', 'error');
+        }
+
+        setTimeout(() => { progress.style.display = 'none'; }, 1000);
+    }
+
+    galleryUpload.addEventListener('change', (e) => {
+        if (e.target.files.length) uploadImages(e.target.files);
+    });
+
+    // Drag & Drop
+    ['dragenter', 'dragover'].forEach(ev => {
+        dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    });
+    ['dragleave', 'drop'].forEach(ev => {
+        dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); });
+    });
+    dropZone.addEventListener('drop', (e) => {
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        if (files.length) uploadImages(files);
+    });
+
+    // ── DELETE ──
+    let deleteId = null;
+
+    function deleteImage(id) {
+        deleteId = id;
+        document.getElementById('deleteModal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('show');
+        deleteId = null;
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if (!deleteId) return;
+        try {
+            const res = await fetch(`/api/api28/dashboard/gallery/${deleteId}/`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': csrfToken },
+            });
+            const result = await res.json();
+            if (result.success) {
+                showToast(result.message, 'success');
+                loadGallery();
+            } else {
+                showToast('Xatolik yuz berdi', 'error');
+            }
+        } catch (err) {
+            showToast('Tarmoq xatosi', 'error');
+        }
+        closeDeleteModal();
+    });
+
+    // ── INIT ──
+    loadGallery();
+</script>
+{% endblock %}

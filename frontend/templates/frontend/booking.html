@@ -303,6 +303,14 @@
 
     updateTotal();
 
+    // ── AUTO-SELECT BARBER FROM URL ─────────────────────
+    const urlParams = new URLSearchParams(window.location.search);
+    const preselectedBarber = urlParams.get('barber_id') || '{{ preselected_barber_id|default:"" }}';
+    if (preselectedBarber) {
+        barberSelect.value = preselectedBarber;
+        loadServices();
+    }
+
     // ── CUSTOM SELECT DROPDOWN ──────────────────────────
     const ARROW_SVG = `<svg class="cs-arrow" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 

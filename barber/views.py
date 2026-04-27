@@ -279,7 +279,10 @@ import requests
 import urllib.parse
 import locale
 
-locale.setlocale(locale.LC_TIME, 'uz_UZ.UTF-8')
+try:
+    locale.setlocale(locale.LC_TIME, 'uz_UZ.UTF-8')
+except locale.Error:
+    pass
 
 
 class BookingView(APIView):
@@ -361,3 +364,175 @@ XURMATLI ADMIN, SAYTDA YANGI BUYURTMA MAVJUD!"""
             return Response({'success': False, 'message': 'Sana formatini to\'g\'ri kiritmadingiz.'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'success': False, 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ══════════════════════════════════════════════════════════
+#  DASHBOARD API VIEWS
+# ══════════════════════════════════════════════════════════
+
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
+from .permissions import IsApprovedBarber, IsOwnerBarber
+
+
+class BarberDashboardProfileView(APIView):
+    """Barber o'z profilini ko'rish va tahrirlash"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        barber = request.user.barber
+        sr = serializers.BarberProfileUpdateSerializer(barber, context={'request': request})
+        return Response({'success': True, 'data': sr.data})
+
+    def put(self, request):
+        barber = request.user.barber
+        sr = serializers.BarberProfileUpdateSerializer(barber, data=request.data, partial=True, context={'request': request})
+        if sr.is_valid():
+            sr.save()
+            return Response({'success': True, 'message': 'Profil yangilandi!', 'data': sr.data})
+        return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BarberDashboardServiceView(APIView):
+    """Barber o'z xizmatlarini ko'rish va qo'shish"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        services = models.Service.objects.filter(barber=request.user.barber)
+        sr = serializers.ServiceCreateUpdateSerializer(services, many=True, context={'request': request})
+        return Response({'success': True, 'data': sr.data})
+
+    def post(self, request):
+        sr = serializers.ServiceCreateUpdateSerializer(data=request.data, context={'request': request})
+        if sr.is_valid():
+            sr.save(barber=request.user.barber)
+            return Response({'success': True, 'message': 'Xizmat qo\'shildi!', 'data': sr.data}, status=status.HTTP_201_CREATED)
+        return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BarberDashboardServiceDetailView(APIView):
+    """Xizmatni tahrirlash va o'chirish"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_object(self, pk, user):
+        service = get_object_or_404(models.Service, pk=pk, barber=user.barber)
+        return service
+
+    def put(self, request, pk):
+        service = self.get_object(pk, request.user)
+        sr = serializers.ServiceCreateUpdateSerializer(service, data=request.data, partial=True, context={'request': request})
+        if sr.is_valid():
+            sr.save()
+            return Response({'success': True, 'message': 'Xizmat yangilandi!', 'data': sr.data})
+        return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        service = self.get_object(pk, request.user)
+        service.delete()
+        return Response({'success': True, 'message': 'Xizmat o\'chirildi!'})
+
+
+class BarberDashboardDopServiceView(APIView):
+    """Barber qo'shimcha xizmatlarini ko'rish va qo'shish"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        services = models.DopService.objects.filter(barber=request.user.barber)
+        sr = serializers.DopServiceCreateUpdateSerializer(services, many=True, context={'request': request})
+        return Response({'success': True, 'data': sr.data})
+
+    def post(self, request):
+        sr = serializers.DopServiceCreateUpdateSerializer(data=request.data, context={'request': request})
+        if sr.is_valid():
+            sr.save(barber=request.user.barber)
+            return Response({'success': True, 'message': 'Qo\'shimcha xizmat qo\'shildi!', 'data': sr.data}, status=status.HTTP_201_CREATED)
+        return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BarberDashboardDopServiceDetailView(APIView):
+    """Qo'shimcha xizmatni tahrirlash va o'chirish"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_object(self, pk, user):
+        return get_object_or_404(models.DopService, pk=pk, barber=user.barber)
+
+    def put(self, request, pk):
+        service = self.get_object(pk, request.user)
+        sr = serializers.DopServiceCreateUpdateSerializer(service, data=request.data, partial=True, context={'request': request})
+        if sr.is_valid():
+            sr.save()
+            return Response({'success': True, 'message': 'Xizmat yangilandi!', 'data': sr.data})
+        return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        service = self.get_object(pk, request.user)
+        service.delete()
+        return Response({'success': True, 'message': 'Xizmat o\'chirildi!'})
+
+
+class BarberDashboardGalleryView(APIView):
+    """Portfolio rasmlarini ko'rish va yuklash"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        gallery = models.Gallery.objects.filter(barber=request.user.barber).order_by('-date_upload')
+        sr = serializers.GalleryCreateSerializer(gallery, many=True, context={'request': request})
+        return Response({'success': True, 'data': sr.data})
+
+    def post(self, request):
+        images = request.FILES.getlist('image')
+        if not images:
+            images = [request.FILES.get('image')]
+
+        created = []
+        for img in images:
+            if img:
+                gallery_item = models.Gallery.objects.create(
+                    barber=request.user.barber,
+                    image=img,
+                )
+                created.append(serializers.GalleryCreateSerializer(gallery_item, context={'request': request}).data)
+
+        return Response({
+            'success': True,
+            'message': f'{len(created)} ta rasm yuklandi!',
+            'data': created
+        }, status=status.HTTP_201_CREATED)
+
+
+class BarberDashboardGalleryDeleteView(APIView):
+    """Portfolio rasmini o'chirish"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+
+    def delete(self, request, pk):
+        gallery_item = get_object_or_404(models.Gallery, pk=pk, barber=request.user.barber)
+        gallery_item.image.delete(save=False)
+        gallery_item.delete()
+        return Response({'success': True, 'message': 'Rasm o\'chirildi!'})
+
+
+class BarberDashboardBookingsView(APIView):
+    """Barberga tushgan barcha buyurtmalar"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+
+    def get(self, request):
+        bookings = models.Booking.objects.filter(
+            barber=request.user.barber
+        ).select_related('service', 'dopservice').order_by('-date')
+        sr = serializers.BookingDetailSerializer(bookings, many=True, context={'request': request})
+        return Response({'success': True, 'data': sr.data})
+
+
+class BarberDetailPublicView(APIView):
+    """Sayt foydalanuvchilari uchun bitta barberning to'liq ma'lumoti"""
+
+    def get(self, request, pk):
+        barber = get_object_or_404(models.Barber, pk=pk, is_approved=True)
+        sr = serializers.BarberDetailPublicSerializer(barber, context={'request': request})
+        return Response({'success': True, 'data': sr.data})

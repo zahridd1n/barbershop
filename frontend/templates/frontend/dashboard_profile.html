@@ -1,0 +1,144 @@
+{% extends "frontend/dashboard_base.html" %}
+
+{% block title %}Profil | Dashboard{% endblock %}
+{% block page_title %}Profilni tahrirlash{% endblock %}
+
+{% block content %}
+<div class="dash-section">
+    <form id="profileForm" class="dash-profile-form" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="dash-profile-layout">
+            <!-- RASM -->
+            <div class="dash-profile-image-section">
+                <div class="dash-image-upload" id="imageDropZone">
+                    {% if barber.image %}
+                        <img src="{{ barber.image.url }}" alt="{{ barber.name }}" class="dash-profile-preview" id="profilePreview">
+                    {% else %}
+                        <div class="dash-profile-preview dash-profile-preview-empty" id="profilePreview">
+                            <i class="bi bi-camera"></i>
+                            <span>Rasm yuklang</span>
+                        </div>
+                    {% endif %}
+                    <label class="dash-image-upload-btn" for="profileImage">
+                        <i class="bi bi-pencil"></i> Rasmni o'zgartirish
+                    </label>
+                    <input type="file" id="profileImage" name="image" accept="image/*" hidden>
+                </div>
+            </div>
+
+            <!-- FORM MAYDONLARI -->
+            <div class="dash-profile-fields">
+                <div class="dash-form-group">
+                    <label for="profileName">Ism</label>
+                    <input type="text" id="profileName" name="name" value="{{ barber.name }}" class="dash-input" required>
+                </div>
+
+                <div class="dash-form-row">
+                    <div class="dash-form-group">
+                        <label for="profileExperience">Tajriba (yil)</label>
+                        <input type="number" id="profileExperience" name="experience" value="{{ barber.experience }}" class="dash-input" min="0" required>
+                    </div>
+                    <div class="dash-form-group">
+                        <label for="profileAge">Yosh</label>
+                        <input type="number" id="profileAge" name="age" value="{{ barber.age }}" class="dash-input" min="14" required>
+                    </div>
+                </div>
+
+                <div class="dash-form-group">
+                    <label for="profileDescription">O'zingiz haqingizda</label>
+                    <textarea id="profileDescription" name="description" class="dash-input dash-textarea" rows="5">{{ barber.description }}</textarea>
+                </div>
+
+                <button type="submit" class="dash-btn dash-btn-primary" id="saveProfileBtn">
+                    <i class="bi bi-check-lg"></i> Saqlash
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const profileForm = document.getElementById('profileForm');
+    const profileImage = document.getElementById('profileImage');
+    const profilePreview = document.getElementById('profilePreview');
+    const dropZone = document.getElementById('imageDropZone');
+
+    // Rasm preview
+    profileImage.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                if (profilePreview.tagName === 'IMG') {
+                    profilePreview.src = ev.target.result;
+                } else {
+                    const img = document.createElement('img');
+                    img.src = ev.target.result;
+                    img.className = 'dash-profile-preview';
+                    img.id = 'profilePreview';
+                    profilePreview.replaceWith(img);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Drag-and-drop
+    ['dragenter', 'dragover'].forEach(e => {
+        dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.add('drag-over'); });
+    });
+    ['dragleave', 'drop'].forEach(e => {
+        dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.remove('drag-over'); });
+    });
+    dropZone.addEventListener('drop', (ev) => {
+        const files = ev.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+            profileImage.files = files;
+            profileImage.dispatchEvent(new Event('change'));
+        }
+    });
+
+    // Formni yuborish
+    profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('saveProfileBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Saqlanmoqda...';
+
+        const formData = new FormData(profileForm);
+        // CSRF tokenni FormData dan olib tashlaymiz, header ga qo'yamiz
+        const csrfToken = formData.get('csrfmiddlewaretoken');
+        formData.delete('csrfmiddlewaretoken');
+
+        // Agar rasm tanlanmagan bo'lsa, formData dan olib tashlaymiz
+        const imageFile = formData.get('image');
+        if (imageFile && imageFile.size === 0) {
+            formData.delete('image');
+        }
+
+        try {
+            const response = await fetch('/api/api28/dashboard/profile/', {
+                method: 'PUT',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData,
+            });
+            const result = await response.json();
+            if (result.success) {
+                showToast('Profil muvaffaqiyatli yangilandi!', 'success');
+            } else {
+                showToast('Xatolik: ' + JSON.stringify(result.errors), 'error');
+            }
+        } catch (err) {
+            showToast('Tarmoq xatosi yuz berdi.', 'error');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Saqlash';
+    });
+</script>
+{% endblock %}

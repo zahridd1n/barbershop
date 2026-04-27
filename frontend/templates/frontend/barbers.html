@@ -17,19 +17,23 @@
             {% for barber in barbers %}
                 <div class="col-md-6 col-xl-4">
                     <article class="team-card h-100">
+                        <a href="{% url 'frontend:barber-detail' barber.id %}" class="team-card-link">
                         {% if barber.image %}
                         <img src="{{ barber.image.url }}" alt="{{ barber.name }}" class="team-image large">
                         {% else %}
                         <img src="https://ui-avatars.com/api/?name={{ barber.name|urlencode }}&background=1f1f1f&color=d4af37&size=200" alt="{{ barber.name }}" class="team-image large">
                         {% endif %}
+                        </a>
                         <div class="team-body">
+                            <a href="{% url 'frontend:barber-detail' barber.id %}" class="team-card-link">
                             <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                                 <h3 class="team-name mb-0">{{ barber.name }}</h3>
                                 <span class="feature-chip">{{ barber.experience }} yil</span>
                             </div>
                             <p class="team-meta">{{ barber.age }} yosh</p>
                             <p class="team-description">{{ barber.description }}</p>
-                            <a href="{% url 'frontend:booking' %}" class="btn btn-accent mt-3">Shu ustaga yozilish</a>
+                            </a>
+                            <a href="{% url 'frontend:booking' %}?barber_id={{ barber.id }}" class="btn btn-accent mt-3">Shu ustaga yozilish</a>
                         </div>
                     </article>
                 </div>

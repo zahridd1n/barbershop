@@ -146,7 +146,7 @@ async def process_approve(callback: CallbackQuery, bot: Bot):
             await bot.send_message(
                 chat_id=telegram_id,
                 text=f"Tabriklaymiz! Arizangiz tasdiqlandi.\n\nSizning admin panelga kirish ma'lumotlaringiz:\n"
-                     f"🌐 Sayt: {settings.SITE_URL}/admin/\n"
+                     f"🌐 Sayt: {settings.SITE_URL}/dashboard/login/\n"
                      f"👤 Login: <code>{username}</code>\n"
                      f"🔑 Parol: <code>{password}</code>",
                 parse_mode="HTML"

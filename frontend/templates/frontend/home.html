@@ -122,6 +122,11 @@
                                 <div>
                                     <p class="service-kicker">{{ service.title }}</p>
                                     <h3 class="service-name">{{ service.name }}</h3>
+                                    {% if service.barber %}
+                                    <a href="{% url 'frontend:barber-detail' service.barber.id %}" class="badge bg-dark text-light border border-secondary text-decoration-none mt-2 d-inline-block">
+                                        <i class="bi bi-person"></i> {{ service.barber.name }}
+                                    </a>
+                                    {% endif %}
                                 </div>
                                 <span class="price-pill">{{ service.price }}</span>
                             </div>
@@ -177,6 +182,7 @@
         <div class="row g-4">
             {% for barber in barbers %}
                 <div class="col-md-6 col-xl-3">
+                    <a href="{% url 'frontend:barber-detail' barber.id %}" class="team-card-link">
                     <article class="team-card">
                         {% if barber.image %}
                         <img src="{{ barber.image.url }}" alt="{{ barber.name }}" class="team-image">
@@ -189,6 +195,7 @@
                             <p class="team-description">{{ barber.description|truncatechars:90 }}</p>
                         </div>
                     </article>
+                    </a>
                 </div>
             {% endfor %}
         </div>

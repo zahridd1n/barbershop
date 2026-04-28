@@ -1,0 +1,99 @@
+{% extends "frontend/dashboard/base_dashboard.html" %}
+
+{% block title %}BossBarber | Dashboard{% endblock %}
+
+{% block content %}
+<div class="dash-welcome">
+    <h1>Xush kelibsiz, {{ barber.name }}!</h1>
+    <p>Bu yerda sizning buyurtmalaringiz va statistikangiz.</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-label">Bugungi buyurtmalar</div>
+        <div class="stat-card-value">{{ today_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-label">Jami buyurtmalar</div>
+        <div class="stat-card-value">{{ total_bookings }}</div>
+    </div>
+</div>
+
+<div class="section-card">
+    <h3 class="section-title">Bugungi buyurtmalar</h3>
+    {% for booking in bookings %}
+        <div class="booking-item">
+            <div class="booking-info">
+                <h4>{{ booking.customer_name }}</h4>
+                <p>{{ booking.service.name }}{% if booking.dopservice %} + {{ booking.dopservice.name }}{% endif %}</p>
+            </div>
+            <div class="booking-time">
+                <div class="time">{{ booking.date|time:"H:i" }}</div>
+                <div class="date">{{ booking.date|date:"d M, l" }}</div>
+            </div>
+            <div class="booking-price">{{ booking.price }} so'm</div>
+        </div>
+    {% empty %}
+        <p class="text-muted">Bugungi buyurtmalar yo'q.</p>
+    {% endfor %}
+</div>
+
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: var(--db-card);
+        border: 1px solid var(--db-border);
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+    .stat-card-label {
+        font-size: 0.875rem;
+        color: var(--db-muted);
+        margin-bottom: 0.5rem;
+    }
+    .stat-card-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--db-accent);
+    }
+    .booking-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+    }
+    .booking-info h4 {
+        color: var(--db-text);
+        margin: 0;
+        font-size: 1rem;
+    }
+    .booking-info p {
+        color: var(--db-muted);
+        margin: 0;
+        font-size: 0.875rem;
+    }
+    .booking-time {
+        text-align: right;
+    }
+    .booking-time .time {
+        font-weight: 600;
+        color: var(--db-accent);
+    }
+    .booking-time .date {
+        font-size: 0.75rem;
+        color: var(--db-muted);
+    }
+    .booking-price {
+        font-weight: 700;
+        color: var(--db-text);
+    }
+</style>
+{% endblock %}

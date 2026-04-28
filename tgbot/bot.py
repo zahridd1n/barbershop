@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from django.conf import settings
+import re
 
 # Initialize dispatcher
 dp = Dispatcher()
@@ -108,70 +109,112 @@ async def process_about(message: Message, state: FSMContext, bot: Bot):
 
 @sync_to_async
 def create_approved_barber(telegram_id, name, experience, description):
-    if Barber.objects.filter(telegram_id=str(telegram_id)).exists():
-        return None, None
+    try:
+        if Barber.objects.filter(telegram_id=str(telegram_id)).exists():
+            print(f"Barber with telegram_id {telegram_id} already exists.")
+            return None, None
+            
+        password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        username = f"barber_{telegram_id}"
         
-    password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-    username = f"barber_{telegram_id}"
-    
-    user = User.objects.create_user(username=username, password=password)
-    user.is_staff = True # required to access admin panel
-    user.save()
-    
-    Barber.objects.create(
-        user=user,
-        telegram_id=str(telegram_id),
-        is_approved=True,
-        name=name,
-        experience=int(experience) if str(experience).isdigit() else 0,
-        description=description,
-        age=20 
-    )
-    return username, password
+        # Check if User already exists but Barber doesn't (cleanup or reuse)
+        user = User.objects.filter(username=username).first()
+        if not user:
+            user = User.objects.create_user(username=username, password=password)
+            user.is_staff = True
+            user.save()
+        else:
+            user.set_password(password)
+            user.save()
+        
+        # Try to parse experience from string like "3 yil" or "3"
+        exp_val = 0
+        try:
+            exp_match = re.search(r'(\d+)', str(experience))
+            if exp_match:
+                exp_val = int(exp_match.group(1))
+        except:
+            pass
+            
+        Barber.objects.create(
+            user=user,
+            telegram_id=str(telegram_id),
+            is_approved=True,
+            name=name,
+            experience=exp_val,
+            description=description,
+            age=20 
+        )
+        return username, password
+    except Exception as e:
+        print(f"Error in create_approved_barber: {e}")
+        import traceback
+        traceback.print_exc()
+        return None, None
 
 @router.callback_query(F.data.startswith("approve_"))
 async def process_approve(callback: CallbackQuery, bot: Bot):
-    telegram_id = callback.data.split("_")[1]
-    
-    lines = callback.message.text.split('\n')
-    name = lines[2].replace("👤 Ism: ", "").strip()
-    experience = lines[4].replace("💼 Tajriba: ", "").replace(" yil", "").strip()
-    description = lines[5].replace("📝 Haqida: ", "").strip()
-    
-    username, password = await create_approved_barber(telegram_id, name, experience, description)
-    
-    if username and password:
-        await callback.message.edit_text(callback.message.html_text + "\n\n✅ <b>Tasdiqlandi</b>", parse_mode="HTML")
-        try:
-            await bot.send_message(
-                chat_id=telegram_id,
-                text=f"Tabriklaymiz! Arizangiz tasdiqlandi.\n\nSizning admin panelga kirish ma'lumotlaringiz:\n"
-                     f"🌐 Sayt: {settings.SITE_URL}/dashboard/login/\n"
-                     f"👤 Login: <code>{username}</code>\n"
-                     f"🔑 Parol: <code>{password}</code>",
-                parse_mode="HTML"
-            )
-            await callback.answer("Tasdiqlandi va sartaroshga ma'lumotlar yuborildi!", show_alert=True)
-        except Exception as e:
-            print(f"Failed to send credentials: {e}")
-            await callback.answer("Foydalanuvchiga xabar yuborishda xatolik yuz berdi!", show_alert=True)
-    else:
-        await callback.answer("Bu sartarosh allaqachon ro'yxatdan o'tgan yoki xatolik yuz berdi.", show_alert=True)
+    try:
+        telegram_id = callback.data.split("_")[1]
+        
+        # Parse info from message text more safely
+        text = callback.message.text
+        lines = text.split('\n')
+        
+        name = "Noma'lum"
+        experience = "0"
+        description = ""
+        
+        for line in lines:
+            if "👤 Ism:" in line:
+                name = line.replace("👤 Ism:", "").strip()
+            elif "💼 Tajriba:" in line:
+                experience = line.replace("💼 Tajriba:", "").replace(" yil", "").strip()
+            elif "📝 Haqida:" in line:
+                description = line.replace("📝 Haqida:", "").strip()
+
+        username, password = await create_approved_barber(telegram_id, name, experience, description)
+        
+        if username and password:
+            await callback.message.edit_text(callback.message.html_text + "\n\n✅ <b>Tasdiqlandi</b>", parse_mode="HTML")
+            try:
+                await bot.send_message(
+                    chat_id=telegram_id,
+                    text=f"Tabriklaymiz! Arizangiz tasdiqlandi.\n\nSizning admin panelga kirish ma'lumotlaringiz:\n"
+                         f"🌐 Sayt: {settings.SITE_URL}/dashboard/login/\n"
+                         f"👤 Login: <code>{username}</code>\n"
+                         f"🔑 Parol: <code>{password}</code>",
+                    parse_mode="HTML"
+                )
+                await callback.answer("Tasdiqlandi va sartaroshga ma'lumotlar yuborildi!", show_alert=True)
+            except Exception as e:
+                print(f"Failed to send credentials: {e}")
+                await callback.answer(f"Tasdiqlandi, lekin xabar yuborishda xatolik: {e}", show_alert=True)
+        else:
+            await callback.answer("Bu sartarosh allaqachon ro'yxatdan o'tgan yoki xatolik yuz berdi.", show_alert=True)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        await callback.answer(f"Xatolik yuz berdi: {e}", show_alert=True)
 
 
 @router.callback_query(F.data.startswith("reject_"))
 async def process_reject(callback: CallbackQuery, bot: Bot):
-    telegram_id = callback.data.split("_")[1]
-    await callback.message.edit_text(callback.message.html_text + "\n\n❌ <b>Rad etildi</b>", parse_mode="HTML")
-    
     try:
-        await bot.send_message(
-            chat_id=telegram_id,
-            text="Kechirasiz, sizning arizangiz ma'muriyat tomonidan rad etildi."
-        )
-        await callback.answer("Rad etildi va xabar yuborildi.")
+        telegram_id = callback.data.split("_")[1]
+        await callback.message.edit_text(callback.message.html_text + "\n\n❌ <b>Rad etildi</b>", parse_mode="HTML")
+        
+        try:
+            await bot.send_message(
+                chat_id=telegram_id,
+                text="Kechirasiz, sizning arizangiz ma'muriyat tomonidan rad etildi."
+            )
+            await callback.answer("Rad etildi va xabar yuborildi.")
+        except Exception as e:
+            print(f"Failed to send rejection message: {e}")
+            await callback.answer("Rad etildi, lekin xabar yuborishda xatolik yuz berdi.", show_alert=True)
     except Exception as e:
-        print(f"Failed to send rejection message: {e}")
-        await callback.answer("Rad etildi, lekin xabar yuborishda xatolik yuz berdi.", show_alert=True)
+        print(f"Error in process_reject: {e}")
+        await callback.answer(f"Xatolik: {e}")
 
 dp.include_router(router)

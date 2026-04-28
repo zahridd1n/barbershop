@@ -1330,8 +1330,8 @@ span.flatpickr-weekday {
    LOGIN PAGE
    ══════════════════════════════════════════════════════════ */
 .login-body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;background:radial-gradient(circle at top left,rgba(200,155,99,.18),transparent 30%),radial-gradient(circle at right center,rgba(255,255,255,.06),transparent 25%),linear-gradient(180deg,#111218 0%,#0d0e13 55%,#12141c 100%)}
-.login-wrapper{display:flex;flex-direction:column;align-items:center;gap:1.5rem;width:100%;max-width:440px}
-.login-card{width:100%;padding:2.5rem;border-radius:32px;background:linear-gradient(180deg,rgba(28,30,40,.95),rgba(18,19,26,.92));border:1px solid rgba(255,255,255,.1);box-shadow:0 28px 80px rgba(0,0,0,.4);backdrop-filter:blur(20px)}
+.login-wrapper{display:flex;flex-direction:column;align-items:center;gap:1.5rem;width:100%;max-width:380px}
+.login-card{width:100%;padding:2rem;border-radius:32px;background:linear-gradient(180deg,rgba(28,30,40,.95),rgba(18,19,26,.92));border:1px solid rgba(255,255,255,.1);box-shadow:0 28px 80px rgba(0,0,0,.4);backdrop-filter:blur(20px)}
 .login-header{text-align:center;margin-bottom:2rem}
 .login-logo{width:56px;height:56px;object-fit:contain;margin-bottom:.75rem}
 .login-logo-icon{width:56px;height:56px;margin:0 auto .75rem;display:grid;place-items:center;border-radius:18px;background:linear-gradient(135deg,var(--accent),var(--accent-strong));color:#1d1409;font-size:1.4rem}
@@ -1340,12 +1340,12 @@ span.flatpickr-weekday {
 .login-error{display:flex;align-items:center;gap:.6rem;padding:.85rem 1rem;border-radius:14px;background:rgba(220,53,69,.12);border:1px solid rgba(220,53,69,.25);color:#ff8a8a;font-size:.9rem;margin-bottom:1.25rem}
 .login-form{display:grid;gap:1.25rem}
 .login-field label{display:flex;align-items:center;gap:.5rem;color:var(--muted);font-size:.85rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem}
-.login-field input{width:100%;padding:.85rem 1rem;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);font-family:"Outfit",sans-serif;font-size:1rem;transition:border-color .25s,box-shadow .25s}
+.login-field input{width:90%;padding:.85rem 1rem;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);font-family:"Outfit",sans-serif;font-size:1rem;transition:border-color .25s,box-shadow .25s;margin:0 auto}
 .login-field input:focus{outline:none;border-color:rgba(200,155,99,.55);box-shadow:0 0 0 .25rem rgba(200,155,99,.12);background:rgba(255,255,255,.06)}
 .login-field input::placeholder{color:rgba(255,255,255,.25)}
-.login-password-wrap{position:relative}
-.login-password-wrap input{padding-right:3rem}
-.login-eye{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:.25rem}
+.login-password-wrap{position:relative;display:block;width:100%}
+.login-password-wrap input{width:100%;padding-right:3rem;box-sizing:border-box}
+.login-eye{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:.25rem;z-index:10}
 .login-btn{display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;padding:1rem;border:none;border-radius:999px;background:linear-gradient(135deg,var(--accent),var(--accent-strong));color:#1d1409;font-weight:700;font-size:1rem;cursor:pointer;transition:opacity .2s;margin-top:.5rem}
 .login-btn:hover{opacity:.92}
 .login-footer{text-align:center;margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--line)}

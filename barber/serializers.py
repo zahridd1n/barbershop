@@ -8,21 +8,20 @@ class FeatureSerializer(serializers.ModelSerializer):
         fields = ('name',)
 
 class ServiceSerializer(serializers.ModelSerializer):
-    get_features = serializers.SerializerMethodField()  # Yangi maydon sifatida belgilash
+    get_features = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Service
-        fields = ('id','title', 'description', 'name', 'price', 'time', 'image','get_features')  # To'g'ri formatda
+        fields = ('id','title', 'description', 'name', 'price', 'time', 'get_features')
 
     def get_get_features(self, obj):
-        # Xususiyatlarni olish va faqat name qiymatini qaytarish
         return [feature.name for feature in obj.get_features]
 
 
 class DopServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.DopService
-        fields = ('id','title', 'description', 'name', 'price', 'time', 'image') 
+        fields = ('id','title', 'description', 'name', 'price', 'time') 
 
 
 class ReviewSerializer(serializers.ModelSerializer):

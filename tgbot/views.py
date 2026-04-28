@@ -1,13 +1,23 @@
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from aiogram.types import Update
-from aiogram import Bot
+
+try:
+    from aiogram.types import Update
+    from aiogram import Bot
+    AIOGRAM_AVAILABLE = True
+except ImportError:
+    AIOGRAM_AVAILABLE = False
+    Update = None
+    Bot = None
+
 from django.conf import settings
-from .bot import dp
 
 @csrf_exempt
-async def telegram_webhook(request):
+def telegram_webhook(request):
+    if not AIOGRAM_AVAILABLE:
+        return JsonResponse({"status": "error", "message": "Aiogram not installed"}, status=500)
+    
     if request.method == "POST":
         try:
             # Parse the incoming JSON update from Telegram
@@ -15,11 +25,16 @@ async def telegram_webhook(request):
             print(">>> KELGAN XABAR TELEGRAMDAN:", update_data)
             update = Update(**update_data)
             
+            from .bot import dp
             # Har bir so'rov uchun yangi Bot instansiyasini (yangi sessiya bilan) yaratamiz
             # Bu Django WSGI da "Session is attached to different loop" xatosini oldini oladi
-            async with Bot(token=settings.BOT_TOKEN) as bot:
-                # Feed the update into the aiogram dispatcher
-                await dp.feed_update(bot=bot, update=update)
+            import asyncio
+            
+            async def process():
+                async with Bot(token=settings.BOT_TOKEN) as bot:
+                    await dp.feed_update(bot=bot, update=update)
+            
+            asyncio.run(process())
             
             return JsonResponse({"status": "ok"})
         except Exception as e:

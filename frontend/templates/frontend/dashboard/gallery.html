@@ -1,0 +1,71 @@
+{% extends "frontend/dashboard/base_dashboard.html" %}
+
+{% block title %}BossBarber | Portfolio{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Portfolio</h1>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-success">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="section-card">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="upload">
+    <div class="upload-container">
+        <label for="gallery-upload" class="upload-area">
+            <input type="file" name="image" id="gallery-upload" accept="image/*" multiple onchange="this.form.submit()">
+            <div class="upload-icon"><i class="bi bi-images"></i></div>
+            <h4 class="mt-2">Yangi rasmlar yuklash</h4>
+            <p class="text-muted">Rasmlarni tanlang yoki shu yerga tashlang</p>
+            <span class="btn btn-outline-light btn-sm mt-2">Fayllarni tanlash</span>
+        </label>
+    </div>
+</form>
+
+<div class="gallery-grid">
+    {% for item in gallery %}
+        <div class="gallery-item">
+            <img src="{{ item.image.url }}" alt="Portfolio">
+            <form method="post" class="gallery-actions">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="gallery_id" value="{{ item.id }}">
+                <button type="submit" class="gallery-delete" onclick="return confirm('Rostan o\'chirmoqchimisiz?')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
+        </div>
+    {% empty %}
+        <div class="empty-state">
+            <i class="bi bi-image"></i>
+            <p>Hozircha rasmlar yo'q. Portfolio yaratish uchun rasm yuklang.</p>
+        </div>
+    {% endfor %}
+</div>
+
+<style>
+    .upload-area { border: 2px dashed var(--db-border); border-radius: 16px; padding: 3rem 2rem; text-align: center; cursor: pointer; transition: all 0.3s; display: block; background: rgba(255,255,255,0.02); }
+    .upload-area:hover { border-color: var(--db-accent); background: rgba(200, 155, 99, 0.05); }
+    .upload-icon { font-size: 3rem; color: var(--db-accent); }
+    
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
+    .gallery-item { position: relative; aspect-ratio: 1; border-radius: 16px; overflow: hidden; border: 1px solid var(--db-border); }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+    .gallery-item:hover img { transform: scale(1.1); }
+    
+    .gallery-actions { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+    .gallery-item:hover .gallery-actions { opacity: 1; }
+    
+    .gallery-delete { background: #ef4444; color: white; width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer; font-size: 1.25rem; transition: transform 0.2s; }
+    .gallery-delete:hover { transform: scale(1.1); }
+    
+    .empty-state { grid-column: 1/-1; text-align: center; padding: 4rem; color: var(--db-muted); background: var(--db-card); border-radius: 16px; border: 1px solid var(--db-border); }
+    .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.5; }
+    .alert-success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); color: #22c55e; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; }
+</style>
+{% endblock %}

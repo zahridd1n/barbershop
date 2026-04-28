@@ -1,0 +1,174 @@
+{% extends "frontend/dashboard/base_dashboard.html" %}
+
+{% block title %}BossBarber | Xizmatlar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Xizmatlar</h1>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert-success">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<h2 class="section-title">Asosiy xizmatlar</h2>
+<div class="services-grid">
+    {% for service in services %}
+        <div class="service-card">
+            <div class="service-header">
+                <h3 class="service-name">{{ service.name }}</h3>
+                <span class="service-price">{{ service.price }} so'm</span>
+            </div>
+            <div class="service-meta">
+                <span><i class="bi bi-clock"></i> {{ service.time }}</span>
+            </div>
+            {% if service.description %}<p class="service-desc">{{ service.description }}</p>{% endif %}
+            <div class="service-actions">
+                <button class="btn-edit" onclick="editService('main', {{ service.id }}, '{{ service.name }}', '{{ service.description }}', '{{ service.price }}', '{{ service.time }}')">Tahrirlash</button>
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="type" value="main">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="service_id" value="{{ service.id }}">
+                    <button type="submit" class="btn-delete" onclick="return confirm('Rostan o\'chirmoqchimisiz?')">O'chirish</button>
+                </form>
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-muted">Asosiy xizmatlar mavjud emas.</p>
+    {% endfor %}
+</div>
+
+<form method="post" class="section-card mt-4">
+    {% csrf_token %}
+    <input type="hidden" name="type" value="main">
+    <input type="hidden" name="service_id" id="main_service_id" value="">
+    <h3 class="section-title" id="service_form_title">Yangi asosiy xizmat qo'shish</h3>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Xizmat nomi</label>
+                <input type="text" name="name" id="main_name" class="form-control" required>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label>Narxi (so'm)</label>
+                <input type="number" name="price" id="main_price" class="form-control" required>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label>Davomiyligi</label>
+                <input type="text" name="time" id="main_time" class="form-control" placeholder="60 minut" required>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="form-group">
+                <label>Tavsifi</label>
+                <textarea name="description" id="main_description" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn-accent">Saqlash</button>
+</form>
+
+<h2 class="section-title mt-5">Qo'shimcha xizmatlar</h2>
+<div class="services-grid">
+    {% for service in dop_services %}
+        <div class="service-card">
+            <div class="service-header">
+                <h3 class="service-name">{{ service.name }}</h3>
+                <span class="service-price">{{ service.price }} so'm</span>
+            </div>
+            <div class="service-meta">
+                <span><i class="bi bi-clock"></i> {{ service.time }}</span>
+            </div>
+            {% if service.description %}<p class="service-desc">{{ service.description }}</p>{% endif %}
+            <div class="service-actions">
+                <button class="btn-edit" onclick="editService('dop', {{ service.id }}, '{{ service.name }}', '{{ service.description }}', '{{ service.price }}', '{{ service.time }}')">Tahrirlash</button>
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="type" value="dop">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="service_id" value="{{ service.id }}">
+                    <button type="submit" class="btn-delete" onclick="return confirm('Rostan o\'chirmoqchimisiz?')">O'chirish</button>
+                </form>
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-muted">Qo'shimcha xizmatlar mavjud emas.</p>
+    {% endfor %}
+</div>
+
+<form method="post" class="section-card mt-4">
+    {% csrf_token %}
+    <input type="hidden" name="type" value="dop">
+    <input type="hidden" name="service_id" id="dop_service_id" value="">
+    <h3 class="section-title" id="dop_service_form_title">Yangi qo'shimcha xizmat qo'shish</h3>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label>Xizmat nomi</label>
+                <input type="text" name="name" id="dop_name" class="form-control" required>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label>Narxi (so'm)</label>
+                <input type="number" name="price" id="dop_price" class="form-control" required>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label>Davomiyligi</label>
+                <input type="text" name="time" id="dop_time" class="form-control" placeholder="30 minut" required>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="form-group">
+                <label>Tavsifi</label>
+                <textarea name="description" id="dop_description" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn-accent">Saqlash</button>
+</form>
+
+<style>
+    .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .service-card { background: var(--db-card); border: 1px solid var(--db-border); border-radius: 16px; padding: 1.5rem; }
+    .service-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem; }
+    .service-name { font-size: 1.125rem; font-weight: 600; color: var(--db-text); margin: 0; }
+    .service-price { font-size: 1.125rem; font-weight: 700; color: var(--db-accent); }
+    .service-meta { color: var(--db-muted); font-size: 0.875rem; margin-bottom: 0.75rem; }
+    .service-desc { color: var(--db-muted); font-size: 0.875rem; line-height: 1.5; }
+    .service-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; border-top: 1px solid var(--db-border); padding-top: 1rem; }
+    .btn-edit { background: rgba(200, 155, 99, 0.15); color: var(--db-accent); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(200, 155, 99, 0.2); cursor: pointer; font-weight: 500; font-size: 0.875rem; }
+    .btn-delete { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2); cursor: pointer; font-weight: 500; font-size: 0.875rem; }
+    .alert-success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); color: #22c55e; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; }
+</style>
+
+<script>
+function editService(type, id, name, desc, price, time) {
+    if (type === 'main') {
+        document.getElementById('main_service_id').value = id;
+        document.getElementById('main_name').value = name;
+        document.getElementById('main_description').value = desc;
+        document.getElementById('main_price').value = price;
+        document.getElementById('main_time').value = time;
+        document.getElementById('service_form_title').textContent = 'Asosiy xizmatni tahrirlash';
+    } else {
+        document.getElementById('dop_service_id').value = id;
+        document.getElementById('dop_name').value = name;
+        document.getElementById('dop_description').value = desc;
+        document.getElementById('dop_price').value = price;
+        document.getElementById('dop_time').value = time;
+        document.getElementById('dop_service_form_title').textContent = 'Qo\'shimcha xizmatni tahrirlash';
+    }
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+</script>
+{% endblock %}

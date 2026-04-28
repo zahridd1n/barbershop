@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}BossBarber Dashboard{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --db-bg: #0a0a0e;
+            --db-sidebar: #12121a;
+            --db-card: #1a1a24;
+            --db-border: #2a2a3a;
+            --db-accent: #c89b63;
+            --db-text: #e8e8ec;
+            --db-muted: #8888a0;
+        }
+        
+        body {
+            background: var(--db-bg);
+            color: var(--db-text);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .dashboard-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .dashboard-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 2rem;
+            min-width: 0; /* Prevent flex overflow */
+        }
+
+        @media (max-width: 991px) {
+            .dashboard-content {
+                margin-left: 72px;
+                padding: 1.5rem;
+            }
+        }
+
+        /* Common Dashboard Components */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .page-header h1 { font-size: 1.75rem; color: var(--db-text); margin: 0; }
+        
+        .section-card { background: var(--db-card); border: 1px solid var(--db-border); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; }
+        .section-title { font-size: 1.25rem; color: var(--db-accent); margin-bottom: 1.25rem; font-weight: 600; }
+        
+        .btn-accent { background: var(--db-accent); color: #1a1a24; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; transition: all 0.2s; }
+        .btn-accent:hover { background: #b08552; transform: translateY(-2px); color: #1a1a24; }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.875rem; color: var(--db-muted); margin-bottom: 0.5rem; }
+        .form-control { 
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid var(--db-border); 
+            border-radius: 10px; 
+            color: var(--db-text); 
+            padding: 0.75rem;
+        }
+        .form-control:focus { 
+            background: rgba(255,255,255,0.08); 
+            border-color: var(--db-accent); 
+            box-shadow: none; 
+            color: var(--db-text);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--db-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--db-border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--db-muted); }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="dashboard-layout">
+        {% include "frontend/dashboard/nav.html" %}
+        
+        <main class="dashboard-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

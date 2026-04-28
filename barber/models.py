@@ -8,12 +8,11 @@ from django.contrib.auth.models import User
 
 class Service(models.Model):
     barber = models.ForeignKey('Barber', on_delete=models.CASCADE, related_name='services', verbose_name="Sartarosh", null=True)
-    title = models.TextField(verbose_name="Sarlavhani kiriting")
+    title = models.TextField(verbose_name="Sarlavhani kiriting", blank=True)
     name = models.CharField(max_length=200, verbose_name="Xizmat nomi")
-    description = models.TextField(verbose_name="Tavsifi")
+    description = models.TextField(verbose_name="Tavsifi", blank=True)
     price = models.DecimalField(max_digits=50, decimal_places=2, verbose_name="Narxi")
-    time = models.CharField(max_length=150, verbose_name="Vaqt (soat:dakika)")
-    image = models.ImageField(upload_to="services", verbose_name="Xizmat rasmini kiriting")
+    time = models.CharField(max_length=150, verbose_name="Vaqt (soat:dakika)", default="60 minut")
 
     class Meta:
         verbose_name = "Xizmat"
@@ -105,7 +104,7 @@ class Barber(models.Model):
     name = models.CharField(max_length=255, verbose_name="Ism")
     experience = models.PositiveIntegerField(verbose_name="Tajriba yillari")
     description = models.TextField(verbose_name="Tavsif")
-    image = models.ImageField(upload_to='barbers/', verbose_name="Rasm")
+    image = models.ImageField(upload_to='barbers/', verbose_name="Rasm", null=True, blank=True)
     age = models.PositiveIntegerField(verbose_name="Yoshi")
 
     def __str__(self):

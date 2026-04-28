@@ -1,0 +1,76 @@
+{% extends "frontend/dashboard/base_dashboard.html" %}
+
+{% block title %}BossBarber | Buyurtmalar{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Buyurtmalar tarixi</h1>
+</div>
+
+<div class="bookings-list">
+    {% for booking in bookings %}
+        <div class="section-card booking-card">
+            <div class="booking-main">
+                <div class="customer-avatar">
+                    {{ booking.customer_name|first|upper }}
+                </div>
+                <div class="booking-details">
+                    <h3>{{ booking.customer_name }}</h3>
+                    <div class="service-tag">
+                        <i class="bi bi-scissors"></i> 
+                        {{ booking.service.name }}{% if booking.dopservice %} + {{ booking.dopservice.name }}{% endif %}
+                    </div>
+                    <div class="contact-tag">
+                        <i class="bi bi-telephone"></i> {{ booking.customer_phone }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="booking-meta">
+                <div class="time-box">
+                    <div class="time">{{ booking.date|time:"H:i" }}</div>
+                    <div class="date">{{ booking.date|date:"d F, l" }}</div>
+                </div>
+                <div class="price-box">
+                    {{ booking.price }} <span>so'm</span>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="empty-state section-card">
+            <i class="bi bi-calendar-x"></i>
+            <p>Hozircha buyurtmalar mavjud emas.</p>
+        </div>
+    {% endfor %}
+</div>
+
+<style>
+    .bookings-list { display: flex; flex-direction: column; gap: 1rem; }
+    .booking-card { display: flex; justify-content: space-between; align-items: center; transition: transform 0.2s; }
+    .booking-card:hover { transform: translateX(5px); border-color: var(--db-accent); }
+    
+    .booking-main { display: flex; align-items: center; gap: 1.25rem; }
+    .customer-avatar { width: 56px; height: 56px; background: rgba(200, 155, 99, 0.1); color: var(--db-accent); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; border: 1px solid rgba(200, 155, 99, 0.2); }
+    
+    .booking-details h3 { margin: 0 0 0.5rem 0; font-size: 1.125rem; color: var(--db-text); }
+    .service-tag, .contact-tag { font-size: 0.875rem; color: var(--db-muted); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    .service-tag i { color: var(--db-accent); }
+    
+    .booking-meta { display: flex; align-items: center; gap: 3rem; }
+    .time-box { text-align: right; }
+    .time-box .time { font-size: 1.5rem; font-weight: 700; color: var(--db-accent); line-height: 1; }
+    .time-box .date { font-size: 0.813rem; color: var(--db-muted); margin-top: 0.25rem; }
+    
+    .price-box { font-size: 1.25rem; font-weight: 700; color: var(--db-text); min-width: 120px; text-align: right; }
+    .price-box span { font-size: 0.875rem; color: var(--db-muted); font-weight: 400; }
+    
+    .empty-state { text-align: center; padding: 4rem; color: var(--db-muted); }
+    .empty-state i { font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.5; }
+    
+    @media (max-width: 768px) {
+        .booking-card { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+        .booking-meta { width: 100%; justify-content: space-between; border-top: 1px solid var(--db-border); pt: 1rem; }
+        .time-box { text-align: left; }
+    }
+</style>
+{% endblock %}

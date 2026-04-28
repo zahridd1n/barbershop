@@ -1,84 +1,223 @@
 {% extends "frontend/dashboard_base.html" %}
 
 {% block title %}Buyurtmalar | Dashboard{% endblock %}
-{% block page_title %}Buyurtmalar tarixi{% endblock %}
+{% block page_title %}Buyurtmalar{% endblock %}
 
 {% block content %}
 <div class="dash-section">
-    <!-- STATISTIKA -->
-    <div class="dash-stats-grid">
-        <div class="dash-stat-card">
-            <div class="dash-stat-icon"><i class="bi bi-calendar-check"></i></div>
-            <div>
-                <span class="dash-stat-label">Bugun</span>
-                <strong class="dash-stat-value">{{ today_bookings_count }}</strong>
-                <span class="dash-stat-sub">buyurtma</span>
-            </div>
-        </div>
-        <div class="dash-stat-card">
-            <div class="dash-stat-icon"><i class="bi bi-clock-history"></i></div>
-            <div>
-                <span class="dash-stat-label">Kelayotgan</span>
-                <strong class="dash-stat-value">{{ upcoming_total }}</strong>
-                <span class="dash-stat-sub">jami booking</span>
-            </div>
-        </div>
-        <div class="dash-stat-card">
-            <div class="dash-stat-icon"><i class="bi bi-cash-stack"></i></div>
-            <div>
-                <span class="dash-stat-label">Tushum</span>
-                <strong class="dash-stat-value">{{ estimated_revenue|floatformat:0 }}</strong>
-                <span class="dash-stat-sub">so'm</span>
-            </div>
+    <div class="dash-section-header">
+        <h3>Buyurtmalar</h3>
+        <div class="dash-tabs">
+            <button class="dash-tab active" data-tab="pending">Kutilmoqda</button>
+            <button class="dash-tab" data-tab="archive">Arxiv</button>
         </div>
     </div>
 
-    <!-- BUYURTMALAR RO'YXATI -->
-    {% if booking_groups %}
-        <div class="dash-bookings-list">
-            {% for group in booking_groups %}
-                <div class="dash-booking-group">
-                    <div class="dash-booking-group-header">
-                        <div class="dash-booking-date">
-                            <i class="bi bi-calendar3"></i>
-                            <span>{{ group.label }}</span>
-                        </div>
-                        <span class="dash-booking-count">{{ group.items|length }} ta</span>
-                    </div>
-
-                    {% for booking in group.items %}
-                        <div class="dash-booking-item">
-                            <div class="dash-booking-time">
-                                <strong>{{ booking.local_dt|date:"H:i" }}</strong>
-                                <span>{{ booking.end_dt|date:"H:i" }}</span>
-                            </div>
-                            <div class="dash-booking-info">
-                                <h4>{{ booking.customer_name }}</h4>
-                                <p>
-                                    {{ booking.service.name }}
-                                    {% if booking.dopservice %}
-                                        <span class="dash-booking-dop">+ {{ booking.dopservice.name }}</span>
-                                    {% endif %}
-                                </p>
-                                <div class="dash-booking-meta">
-                                    <span><i class="bi bi-telephone"></i> {{ booking.customer_phone }}</span>
-                                    <span><i class="bi bi-stopwatch"></i> {{ booking.service_time }}</span>
-                                </div>
-                            </div>
-                            <div class="dash-booking-price">
-                                {{ booking.total_price|floatformat:0 }} <small>so'm</small>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="dash-empty dash-empty-large">
+    <!-- PENDING BOOKINGS -->
+    <div id="pendingTab" class="dash-tab-content">
+        <div id="pendingBookingsList" class="dash-bookings-list"></div>
+        <div id="pendingEmpty" class="dash-empty dash-empty-large" style="display:none;">
             <i class="bi bi-calendar-x"></i>
-            <h3>Buyurtmalar topilmadi</h3>
-            <p>Hozirdan boshlab kelayotgan buyurtmalar bu yerda ko'rinadi.</p>
+            <h3>Kutilayotgan buyurtmalar yo'q</h3>
+            <p>Yangi buyurtmalar bu yerda ko'rinadi.</p>
         </div>
-    {% endif %}
+    </div>
+
+    <!-- ARCHIVE BOOKINGS -->
+    <div id="archiveTab" class="dash-tab-content" style="display:none;">
+        <div id="archiveBookingsList" class="dash-bookings-list"></div>
+        <div id="archiveEmpty" class="dash-empty dash-empty-large" style="display:none;">
+            <i class="bi bi-archive"></i>
+            <h3>Arxiv bo'sh</h3>
+            <p>Tasdiqlangan va rad etilgan buyurtmalar bu yerda ko'rinadi.</p>
+        </div>
+    </div>
 </div>
+
+<!-- REJECT MODAL -->
+<div id="rejectModal" class="dash-modal" style="display:none;">
+    <div class="dash-modal-content">
+        <div class="dash-modal-header">
+            <h4>Buyurtmani rad etish</h4>
+            <button class="dash-modal-close" onclick="closeRejectModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="dash-modal-body">
+            <label class="dash-label">Rad etish sababi</label>
+            <textarea id="rejectReason" class="dash-input" rows="3" placeholder="Nega rad etmoqchisiz?"></textarea>
+        </div>
+        <div class="dash-modal-footer">
+            <button class="dash-btn dash-btn-ghost" onclick="closeRejectModal()">Bekor qilish</button>
+            <button class="dash-btn dash-btn-danger" onclick="confirmReject()">Rad etish</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const csrfToken = getCookie('csrftoken');
+    let currentRejectBookingId = null;
+
+    // Tab switching
+    document.querySelectorAll('.dash-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.dash-tab-content').forEach(c => c.style.display = 'none');
+            tab.classList.add('active');
+            const tabName = tab.dataset.tab;
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            if (tabName === 'pending') loadPendingBookings();
+            else loadArchiveBookings();
+        });
+    });
+
+    // Load pending bookings
+    async function loadPendingBookings() {
+        const res = await fetch('/api/api28/dashboard/bookings/pending/', {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+        const list = document.getElementById('pendingBookingsList');
+        const empty = document.getElementById('pendingEmpty');
+
+        if (!data.success || !data.data || data.data.length === 0) {
+            list.innerHTML = '';
+            empty.style.display = 'block';
+            return;
+        }
+
+        empty.style.display = 'none';
+        list.innerHTML = data.data.map(b => renderBookingCard(b, 'pending')).join('');
+    }
+
+    // Load archive bookings
+    async function loadArchiveBookings() {
+        const res = await fetch('/api/api28/dashboard/bookings/archive/', {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+        const list = document.getElementById('archiveBookingsList');
+        const empty = document.getElementById('archiveEmpty');
+
+        if (!data.success || !data.data || data.data.length === 0) {
+            list.innerHTML = '';
+            empty.style.display = 'block';
+            return;
+        }
+
+        empty.style.display = 'none';
+        list.innerHTML = data.data.map(b => renderBookingCard(b, 'archive')).join('');
+    }
+
+    function renderBookingCard(b, type) {
+        const date = new Date(b.date);
+        const dateStr = date.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+        const statusClass = b.status === 'approved' ? 'dash-status-approved' : 'dash-status-rejected';
+        const statusText = b.status === 'approved' ? 'Tasdiqlangan' : 'Rad etilgan';
+
+        let actions = '';
+        if (type === 'pending') {
+            actions = `
+                <div class="dash-booking-actions">
+                    <button class="dash-btn dash-btn-sm dash-btn-success" onclick="approveBooking(${b.id})">
+                        <i class="bi bi-check-lg"></i> Tasdiqlash
+                    </button>
+                    <button class="dash-btn dash-btn-sm dash-btn-danger" onclick="openRejectModal(${b.id})">
+                        <i class="bi bi-x-lg"></i> Rad etish
+                    </button>
+                </div>
+            `;
+        } else {
+            actions = `
+                <div class="dash-booking-status ${statusClass}">
+                    <i class="bi ${b.status === 'approved' ? 'bi-check-circle' : 'bi-x-circle'}"></i>
+                    ${statusText}
+                </div>
+                ${b.rejection_reason ? `<div class="dash-booking-reason"><small>Sabab: ${b.rejection_reason}</small></div>` : ''}
+            `;
+        }
+
+        return `
+            <div class="dash-booking-card">
+                <div class="dash-booking-main">
+                    <div class="dash-booking-datetime">
+                        <div class="dash-booking-date">${dateStr}</div>
+                        <div class="dash-booking-time">${timeStr}</div>
+                    </div>
+                    <div class="dash-booking-details">
+                        <h4>${b.customer_name}</h4>
+                        <p>${b.service_name} ${b.dopservice_name ? '+ ' + b.dopservice_name : ''}</p>
+                        <div class="dash-booking-meta">
+                            <span><i class="bi bi-telephone"></i> ${b.customer_phone}</span>
+                            <span><i class="bi bi-cash"></i> ${b.price} so'm</span>
+                        </div>
+                    </div>
+                </div>
+                ${actions}
+            </div>
+        `;
+    }
+
+    async function approveBooking(id) {
+        const res = await fetch(`/api/api28/dashboard/bookings/action/${id}/`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ action: 'approve' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            loadPendingBookings();
+        } else {
+            showToast(data.message || 'Xatolik', 'error');
+        }
+    }
+
+    function openRejectModal(id) {
+        currentRejectBookingId = id;
+        document.getElementById('rejectModal').style.display = 'flex';
+        document.getElementById('rejectReason').value = '';
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+        currentRejectBookingId = null;
+    }
+
+    async function confirmReject() {
+        const reason = document.getElementById('rejectReason').value.trim();
+        if (!reason) {
+            showToast('Rad etish sababini kiriting', 'error');
+            return;
+        }
+
+        const res = await fetch(`/api/api28/dashboard/bookings/action/${currentRejectBookingId}/`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ action: 'reject', rejection_reason: reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeRejectModal();
+            loadPendingBookings();
+        } else {
+            showToast(data.message || 'Xatolik', 'error');
+        }
+    }
+
+    // Initial load
+    loadPendingBookings();
+</script>
 {% endblock %}

@@ -48,6 +48,10 @@
                     <i class="bi bi-person-gear"></i>
                     <span>Profil</span>
                 </a>
+                <a href="{% url 'frontend:dashboard-availability' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'dashboard-availability' %}active{% endif %}">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Ish vaqti</span>
+                </a>
                 <a href="{% url 'frontend:dashboard-services' %}" class="dash-nav-item {% if request.resolver_match.url_name == 'dashboard-services' %}active{% endif %}">
                     <i class="bi bi-scissors"></i>
                     <span>Xizmatlar</span>

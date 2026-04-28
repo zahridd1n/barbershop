@@ -1390,6 +1390,13 @@ span.flatpickr-weekday {
 .dash-section{max-width:960px}
 .dash-section-header{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.5rem}
 .dash-section-header h3{font-family:"Playfair Display",serif;font-size:1.2rem;margin:0}
+.dash-header-actions{display:flex;align-items:center;gap:.75rem}
+.dash-tabs{display:flex;gap:.5rem;background:rgba(255,255,255,.03);padding:.25rem;border-radius:999px;border:1px solid var(--line)}
+.dash-tab{background:none;border:none;padding:.6rem 1.2rem;border-radius:999px;color:var(--text-muted);font-family:"Outfit",sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;transition:all .2s}
+.dash-tab:hover{color:var(--text)}
+.dash-tab.active{background:var(--accent);color:#1d1409}
+.dash-tab-content{display:none}
+.dash-tab-content.active{display:block}
 .dash-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.2rem;border-radius:999px;border:none;font-family:"Outfit",sans-serif;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .2s}
 .dash-btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-strong));color:#1d1409}
 .dash-btn-primary:hover{opacity:.9}
@@ -1400,6 +1407,34 @@ span.flatpickr-weekday {
 .dash-btn-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--text);cursor:pointer;transition:all .2s;font-size:.95rem}
 .dash-btn-icon:hover{background:rgba(200,155,99,.12);border-color:rgba(200,155,99,.3);color:var(--accent-strong)}
 .dash-btn-icon-danger:hover{background:rgba(220,53,69,.12);border-color:rgba(220,53,69,.3);color:#ff6b6b}
+.dash-btn-sm{padding:.5rem .9rem;font-size:.82rem}
+.dash-btn-success{background:rgba(25,135,84,.15);color:#75d9a0;border:1px solid rgba(25,135,84,.25)}
+.dash-btn-success:hover{background:rgba(25,135,84,.25)}
+.dash-booking-card{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:16px;padding:1.25rem;margin-bottom:1rem;transition:border-color .2s}
+.dash-booking-card:hover{border-color:rgba(200,155,99,.2)}
+.dash-booking-main{display:flex;gap:1.25rem;margin-bottom:1rem}
+.dash-booking-datetime{min-width:100px;text-align:center}
+.dash-booking-date{font-size:.85rem;color:var(--text-muted);margin-bottom:.25rem}
+.dash-booking-time{font-size:1.1rem;font-weight:600;color:var(--accent-strong)}
+.dash-booking-details{flex:1}
+.dash-booking-details h4{font-size:1rem;margin:0 0 .35rem 0}
+.dash-booking-details p{margin:0 0 .5rem 0;color:var(--muted);font-size:.9rem}
+.dash-booking-meta{display:flex;flex-wrap:wrap;gap:.75rem;font-size:.85rem;color:var(--text-muted)}
+.dash-booking-meta i{margin-right:.3rem}
+.dash-booking-actions{display:flex;gap:.5rem}
+.dash-booking-status{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .9rem;border-radius:999px;font-size:.85rem;font-weight:600}
+.dash-status-approved{background:rgba(25,135,84,.15);color:#75d9a0;border:1px solid rgba(25,135,84,.25)}
+.dash-status-rejected{background:rgba(220,53,69,.15);color:#ff8a8a;border:1px solid rgba(220,53,69,.25)}
+.dash-booking-reason{margin-top:.5rem;padding:.5rem .75rem;background:rgba(220,53,69,.08);border-radius:8px;color:#ff8a8a;font-size:.85rem}
+.dash-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1040;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.dash-modal-content{background:var(--bg);border:1px solid var(--line);border-radius:20px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.dash-modal-header{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-bottom:1px solid var(--line)}
+.dash-modal-header h4{margin:0;font-size:1.1rem}
+.dash-modal-close{background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;transition:color .2s}
+.dash-modal-close:hover{color:var(--text)}
+.dash-modal-body{padding:1.5rem}
+.dash-modal-footer{display:flex;justify-content:flex-end;gap:.75rem;padding:1.25rem 1.5rem;border-top:1px solid var(--line)}
+.dash-label{display:block;margin-bottom:.5rem;font-size:.9rem;color:var(--text-muted);font-weight:500}
 
 /* Forms */
 .dash-input{width:100%;padding:.75rem 1rem;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);font-family:"Outfit",sans-serif;font-size:.95rem;transition:border-color .25s,box-shadow .25s}
@@ -1432,6 +1467,42 @@ span.flatpickr-weekday {
 .dash-service-card{border-radius:22px;overflow:hidden;background:linear-gradient(180deg,rgba(24,26,34,.92),rgba(18,19,26,.88));border:1px solid var(--line);box-shadow:0 8px 28px rgba(0,0,0,.15);transition:border-color .25s}
 .dash-service-card:hover{border-color:rgba(200,155,99,.25)}
 .dash-service-img{width:100%;height:180px;object-fit:cover}
+
+/* Availability */
+.dash-availability-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.dash-availability-card{border-radius:22px;background:linear-gradient(180deg,rgba(24,26,34,.92),rgba(18,19,26,.88));border:1px solid var(--line);box-shadow:0 8px 28px rgba(0,0,0,.15);padding:1.25rem}
+.dash-availability-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.dash-availability-card-header strong{font-size:1rem}
+.dash-availability-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.dash-availability-card .dash-form-group{margin-bottom:0}
+
+/* flatpickr overrides (Dashboard) */
+.flatpickr-calendar{background:rgba(18,19,26,.98);border:1px solid rgba(255,255,255,.1);box-shadow:0 24px 80px rgba(0,0,0,.55);backdrop-filter:blur(18px);border-radius:18px;color:var(--text)}
+.flatpickr-time{border-top:1px solid rgba(255,255,255,.08)}
+.flatpickr-time .numInputWrapper{background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.08)}
+.flatpickr-time input,.flatpickr-time .flatpickr-am-pm{color:var(--text);font-family:"Outfit",sans-serif;background:transparent!important}
+.flatpickr-time input{border:0;background:transparent!important;box-shadow:none!important}
+.flatpickr-time input.numInput{background:transparent!important}
+.flatpickr-time .numInputWrapper input{background:transparent!important}
+.flatpickr-time .numInputWrapper input:focus{background:rgba(255,255,255,.06)!important}
+.flatpickr-time .flatpickr-am-pm{border:0}
+.flatpickr-time input:focus{outline:none}
+.flatpickr-current-month,.flatpickr-weekdays{color:var(--text)}
+.flatpickr-day{border-radius:12px}
+.flatpickr-day.selected,.flatpickr-day.startRange,.flatpickr-day.endRange,.flatpickr-day.selected.inRange,.flatpickr-day.startRange.inRange,.flatpickr-day.endRange.inRange{background:var(--accent-strong);border-color:var(--accent-strong);color:#1d1409}
+.flatpickr-day:hover{background:rgba(200,155,99,.16)}
+.flatpickr-time .flatpickr-time-separator,.flatpickr-time .flatpickr-am-pm{color:rgba(255,255,255,.7)}
+.flatpickr-time .numInputWrapper span{border-left:1px solid rgba(255,255,255,.08)}
+.flatpickr-time .numInputWrapper span:hover{background:rgba(255,255,255,.06)}
+.flatpickr-time .numInputWrapper span.arrowUp:after{border-bottom-color:rgba(255,255,255,.35)}
+.flatpickr-time .numInputWrapper span.arrowDown:after{border-top-color:rgba(255,255,255,.35)}
+
+/* Input selection colors (avoid white blocks) */
+.flatpickr-time input::selection{background:rgba(200,155,99,.35);color:var(--text)}
+
+/* Active glow like booking select */
+.dash-input.dash-time.active,
+.dash-input.dash-time:focus{border-color:rgba(200,155,99,.55);box-shadow:0 0 0 .25rem rgba(200,155,99,.12);background:rgba(255,255,255,.06)}
 .dash-service-body{padding:1.15rem}
 .dash-service-top{display:flex;justify-content:space-between;align-items:start;gap:.75rem;margin-bottom:.6rem}
 .dash-service-kicker{color:var(--accent-strong);font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.15rem}
@@ -1562,6 +1633,8 @@ span.flatpickr-weekday {
 @media(max-width:767.98px){
 .dash-form-row{grid-template-columns:1fr}
 .dash-cards-grid{grid-template-columns:1fr}
+.dash-availability-grid{grid-template-columns:1fr}
+.dash-availability-card-grid{grid-template-columns:1fr}
 .dash-gallery-grid{grid-template-columns:repeat(2,1fr)}
 .barber-detail-gallery{grid-template-columns:repeat(2,1fr)}
 }

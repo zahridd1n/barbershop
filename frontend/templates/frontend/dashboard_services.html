@@ -111,6 +111,16 @@
 <script>
     const csrfToken = getCookie('csrftoken');
 
+    async function safeJsonFromResponse(res) {
+        const raw = await res.text();
+        if (!raw) return { ok: res.ok, status: res.status, json: null, raw: '' };
+        try {
+            return { ok: res.ok, status: res.status, json: JSON.parse(raw), raw };
+        } catch (e) {
+            return { ok: res.ok, status: res.status, json: null, raw };
+        }
+    }
+
     // ── TABS ──
     document.querySelectorAll('.dash-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -123,15 +133,46 @@
 
     // ── LOAD SERVICES ──
     async function loadServices() {
-        // Asosiy
-        const mainRes = await fetch('/api/api28/dashboard/services/');
-        const mainData = await mainRes.json();
-        renderServices(mainData.data || [], 'mainServicesList', 'main');
+        try {
+            // Asosiy
+            const mainRes = await fetch('/api/api28/dashboard/services/', {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' },
+            });
+            const mainParsed = await safeJsonFromResponse(mainRes);
+            const mainData = mainParsed.json;
+            if (!mainParsed.ok || !mainData || mainData.success === false) {
+                const msg = (mainData && (mainData.message || mainData.detail))
+                    ? (mainData.message || mainData.detail)
+                    : `HTTP ${mainParsed.status}. Login/CSRF yoki server xatosi bo'lishi mumkin.`;
+                showToast(msg, 'error');
+                renderServices([], 'mainServicesList', 'main');
+            } else {
+                renderServices(mainData.data || [], 'mainServicesList', 'main');
+            }
 
-        // Qo'shimcha
-        const dopRes = await fetch('/api/api28/dashboard/dopservices/');
-        const dopData = await dopRes.json();
-        renderServices(dopData.data || [], 'dopServicesList', 'dop');
+            // Qo'shimcha
+            const dopRes = await fetch('/api/api28/dashboard/dopservices/', {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' },
+            });
+            const dopParsed = await safeJsonFromResponse(dopRes);
+            const dopData = dopParsed.json;
+            if (!dopParsed.ok || !dopData || dopData.success === false) {
+                const msg = (dopData && (dopData.message || dopData.detail))
+                    ? (dopData.message || dopData.detail)
+                    : `HTTP ${dopParsed.status}. Login/CSRF yoki server xatosi bo'lishi mumkin.`;
+                showToast(msg, 'error');
+                renderServices([], 'dopServicesList', 'dop');
+            } else {
+                renderServices(dopData.data || [], 'dopServicesList', 'dop');
+            }
+        } catch (e) {
+            showToast('Tarmoq/parse xatosi: console ni tekshiring', 'error');
+            console.error('Load services error:', e);
+            renderServices([], 'mainServicesList', 'main');
+            renderServices([], 'dopServicesList', 'dop');
+        }
     }
 
     function renderServices(services, containerId, type) {
@@ -198,11 +239,24 @@
     // ── EDIT: Fetch service data and open modal ──
     async function editService(id, type) {
         const endpoint = type === 'main' ? 'services' : 'dopservices';
-        const res = await fetch(`/api/api28/dashboard/${endpoint}/`);
-        const data = await res.json();
-        const service = (data.data || []).find(s => s.id === id);
-        if (service) {
-            openServiceModal(type, service);
+        try {
+            const res = await fetch(`/api/api28/dashboard/${endpoint}/`, {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' },
+            });
+            const parsed = await safeJsonFromResponse(res);
+            const data = parsed.json;
+            if (!parsed.ok || !data) {
+                showToast(`HTTP ${parsed.status}. Ma'lumotni olib bo'lmadi.`, 'error');
+                return;
+            }
+            const service = (data.data || []).find(s => s.id === id);
+            if (service) {
+                openServiceModal(type, service);
+            }
+        } catch (e) {
+            showToast('Tarmoq/parse xatosi: console ni tekshiring', 'error');
+            console.error('Edit service error:', e);
         }
     }
 
@@ -232,19 +286,32 @@
         try {
             const res = await fetch(url, {
                 method,
-                headers: { 'X-CSRFToken': csrfToken },
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
                 body: formData,
             });
-            const result = await res.json();
-            if (result.success) {
+
+            const parsed = await safeJsonFromResponse(res);
+            const result = parsed.json;
+            if (parsed.ok && result && result.success) {
                 showToast(result.message, 'success');
                 closeServiceModal();
                 loadServices();
             } else {
-                showToast('Xatolik: ' + JSON.stringify(result.errors), 'error');
+                let msg = 'Xatolik yuz berdi';
+                if (result) {
+                    msg = result.message || ('Xatolik: ' + JSON.stringify(result.errors || result.detail || {}));
+                } else {
+                    msg = `HTTP ${parsed.status}. Ehtimol CSRF/login muammosi (HTML qaytdi).`;
+                }
+                showToast(msg, 'error');
             }
         } catch (err) {
-            showToast('Tarmoq xatosi', 'error');
+            showToast('Tarmoq/parse xatosi: console ni tekshiring', 'error');
+            console.error('Save service error:', err);
         }
         btn.disabled = false;
     });
@@ -270,17 +337,30 @@
         try {
             const res = await fetch(`/api/api28/dashboard/${endpoint}/${id}/`, {
                 method: 'DELETE',
-                headers: { 'X-CSRFToken': csrfToken },
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
             });
-            const result = await res.json();
-            if (result.success) {
+
+            const parsed = await safeJsonFromResponse(res);
+            const result = parsed.json;
+            if (parsed.ok && result && result.success) {
                 showToast(result.message, 'success');
                 loadServices();
             } else {
-                showToast('Xatolik yuz berdi', 'error');
+                let msg = 'Xatolik yuz berdi';
+                if (result) {
+                    msg = result.message || result.detail || msg;
+                } else {
+                    msg = `HTTP ${parsed.status}. Ehtimol CSRF/login muammosi (HTML qaytdi).`;
+                }
+                showToast(msg, 'error');
             }
         } catch (err) {
-            showToast('Tarmoq xatosi', 'error');
+            showToast('Tarmoq/parse xatosi: console ni tekshiring', 'error');
+            console.error('Delete service error:', err);
         }
         closeDeleteModal();
     });

@@ -19,6 +19,7 @@ urlpatterns = [
     path("dashboard/login/", views.DashboardLoginView.as_view(), name="dashboard-login"),
     path("dashboard/logout/", views.DashboardLogoutView.as_view(), name="dashboard-logout"),
     path("dashboard/", views.DashboardView.as_view(), name="dashboard"),
+    path("dashboard/availability/", views.DashboardAvailabilityView.as_view(), name="dashboard-availability"),
     path("dashboard/services/", views.DashboardServicesView.as_view(), name="dashboard-services"),
     path("dashboard/gallery/", views.DashboardGalleryView.as_view(), name="dashboard-gallery"),
     path("dashboard/bookings/", views.DashboardBookingsView.as_view(), name="dashboard-bookings"),

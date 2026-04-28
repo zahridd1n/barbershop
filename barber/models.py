@@ -13,6 +13,7 @@ class Service(models.Model):
     description = models.TextField(verbose_name="Tavsifi", blank=True)
     price = models.DecimalField(max_digits=50, decimal_places=2, verbose_name="Narxi")
     time = models.CharField(max_length=150, verbose_name="Vaqt (soat:dakika)", default="60 minut")
+    image = models.ImageField(upload_to="services", verbose_name="Xizmat rasmini kiriting", blank=True, null=True)
 
     class Meta:
         verbose_name = "Xizmat"
@@ -40,12 +41,12 @@ class Feature(models.Model):
 
 class DopService(models.Model):
     barber = models.ForeignKey('Barber', on_delete=models.CASCADE, related_name='dopservices', verbose_name="Sartarosh", null=True)
-    title = models.TextField(verbose_name="Sarlavhani kiriting")
+    title = models.TextField(verbose_name="Sarlavhani kiriting", blank=True)
     name = models.CharField(max_length=200, verbose_name="Xizmat nomi")
-    description = models.TextField(verbose_name="Tavsifi")
+    description = models.TextField(verbose_name="Tavsifi", blank=True)
     price = models.DecimalField(max_digits=50, decimal_places=2, verbose_name="Narxi")
-    time = models.CharField(max_length=150, verbose_name="Vaqt (soat:dakika)")
-    image = models.ImageField(upload_to="services", verbose_name="Xizmat rasmini kiriting")
+    time = models.CharField(max_length=150, verbose_name="Vaqt (soat:dakika)", default="30 minut")
+    image = models.ImageField(upload_to="services", verbose_name="Xizmat rasmini kiriting", blank=True, null=True)
 
     class Meta:
         verbose_name = "Qo'shimcha xizmat"
@@ -159,6 +160,12 @@ class Video(models.Model):
 
 
 class Booking(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Kutilmoqda'),
+        ('approved', 'Tasdiqlangan'),
+        ('rejected', 'Rad etilgan'),
+    ]
+
     barber = models.ForeignKey(Barber, on_delete=models.CASCADE)
     service = models.ForeignKey(Service, on_delete=models.CASCADE)
     dopservice = models.ForeignKey(DopService, on_delete=models.CASCADE, blank=True, null=True)
@@ -167,6 +174,8 @@ class Booking(models.Model):
     customer_phone = models.CharField(max_length=15)
     service_time = models.DurationField()
     price = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    rejection_reason = models.TextField(blank=True, null=True, verbose_name="Rad etish sababi")
 
     def __str__(self):
         return f"Appointment for {self.customer_name} with {self.barber.name} on {self.date}"
@@ -174,14 +183,56 @@ class Booking(models.Model):
 
 class Availability(models.Model):
     barber = models.ForeignKey(Barber, on_delete=models.CASCADE)
-    day_of_week = models.CharField(max_length=10)
+    DAY_CHOICES = [
+        ('mon', 'Mon'),
+        ('tue', 'Tue'),
+        ('wed', 'Wed'),
+        ('thu', 'Thu'),
+        ('fri', 'Fri'),
+        ('sat', 'Sat'),
+        ('sun', 'Sun'),
+    ]
+
+    day_of_week = models.CharField(max_length=10, choices=DAY_CHOICES)
     start_time = models.TimeField()
     end_time = models.TimeField()
     lunch_start_time = models.TimeField(null=True, blank=True)
     lunch_end_time = models.TimeField(null=True, blank=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['barber', 'day_of_week'], name='uniq_barber_day_availability'),
+        ]
+
     def __str__(self):
         return f"{self.barber.name}'s availability on {self.day_of_week}"
+
+
+# ── SIGNALS ────────────────────────────────────────────────
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from datetime import time
+
+
+@receiver(post_save, sender=Barber)
+def create_default_availability(sender, instance, created, **kwargs):
+    if created:
+        default_start = time(8, 0)   # 08:00
+        default_end = time(17, 0)   # 17:00
+        lunch_start = time(12, 0)   # 12:00
+        lunch_end = time(13, 0)     # 13:00
+
+        for day_key, _ in Availability.DAY_CHOICES:
+            Availability.objects.get_or_create(
+                barber=instance,
+                day_of_week=day_key,
+                defaults={
+                    'start_time': default_start,
+                    'end_time': default_end,
+                    'lunch_start_time': lunch_start,
+                    'lunch_end_time': lunch_end,
+                }
+            )
 
 
 class Richtext(models.Model):

@@ -6,6 +6,7 @@ from rest_framework import generics
 from . import models
 from . import serializers
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from django.utils import timezone
 
 
 class ServiceView(APIView):
@@ -171,7 +172,7 @@ from django.utils import timezone
 class AvailableTimes(APIView):
     def get(self, request):
         barber_id = request.GET.get('barber_id')
-        service_time = request.GET.get('service_time')
+        service_time_minutes = request.GET.get('service_time')
         date_param = request.GET.get('date')
         uzbekistan_tz = pytz.timezone('Asia/Tashkent')
         today = datetime.now(uzbekistan_tz).date()
@@ -186,11 +187,12 @@ class AvailableTimes(APIView):
 
         try:
             barber = models.Barber.objects.get(id=barber_id)
-            availability = models.Availability.objects.filter(barber=barber).first()
+            weekday_key = self._weekday_key(requested_date)
+            availability = models.Availability.objects.filter(barber=barber, day_of_week=weekday_key).first()
             if not availability:
                 return Response({
                     "success": False,
-                    "message": "Barber uchun ish vaqti topilmadi."
+                    "message": "Barber bu kun uchun ish vaqtini sozlamagan."
                 }, status=status.HTTP_404_NOT_FOUND)
         except models.Barber.DoesNotExist:
             return Response({
@@ -198,10 +200,16 @@ class AvailableTimes(APIView):
                 "message": "Barber topilmadi."
             }, status=status.HTTP_404_NOT_FOUND)
 
-        booked_dates = models.Booking.objects.filter(barber=barber).values_list('date', flat=True)
-        booked_dates = [datetime.combine(date.date(), date.time()).replace(tzinfo=None) for date in booked_dates]
-        all_possible_dates = self.get_all_possible_dates(requested_date, availability.start_time, availability.end_time)
-        available_times = self.get_available_times(requested_date, all_possible_dates, booked_dates, availability)
+        try:
+            service_time = timedelta(minutes=int(service_time_minutes)) if service_time_minutes else timedelta(minutes=60)
+        except (TypeError, ValueError):
+            service_time = timedelta(minutes=60)
+
+        available_times = self.get_available_times(
+            requested_date=requested_date,
+            availability=availability,
+            service_time=service_time,
+        )
 
         data = {
             "date": requested_date.strftime("%Y-%m-%d"),
@@ -220,60 +228,65 @@ class AvailableTimes(APIView):
 
         return Response(response_data)
 
-    def get_all_possible_dates(self, start_date, start_time, end_time):
-        start_time_str = start_time.isoformat()
-        end_time_str = end_time.isoformat()
-        start_time = time.fromisoformat(start_time_str)
-        end_time = time.fromisoformat(end_time_str)
+    def _weekday_key(self, d):
+        return ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][d.weekday()]
 
-        interval = timedelta(minutes=60)
-        times = {}
-
-        for i in range(5):
-            current_date = start_date + timedelta(days=i)
-            current_time = start_time
-            if current_date not in times:
-                times[current_date] = []
-            while current_time <= end_time:
-                times[current_date].append(current_time)
-                current_time = (datetime.combine(current_date, current_time) + interval).time()
-
-        return times
-
-    def get_available_times(self, requested_date, all_possible_dates, booked_dates, availability):
-        available_times = []
-        times = all_possible_dates.get(requested_date, [])
+    def get_available_times(self, requested_date, availability, service_time):
         uzbekistan_tz = pytz.timezone('Asia/Tashkent')
-        lunch_start = datetime.combine(requested_date, availability.lunch_start_time).time()
-        lunch_end = datetime.combine(requested_date, availability.lunch_end_time).time()
+        step = timedelta(minutes=30)
 
-        booked_times = []
-        for b in models.Booking.objects.filter(barber=availability.barber):
-            b_date_uzt = b.date.astimezone(uzbekistan_tz)
-            booked_time_end = (b_date_uzt + b.service_time).time()
-            if b_date_uzt.date() == requested_date:
-                booked_times.append((b_date_uzt.time(), booked_time_end))
+        work_start_dt = uzbekistan_tz.localize(datetime.combine(requested_date, availability.start_time))
+        work_end_dt = uzbekistan_tz.localize(datetime.combine(requested_date, availability.end_time))
 
-        for t in times:
-            if lunch_start <= t <= lunch_end:
+        lunch_start_dt = None
+        lunch_end_dt = None
+        if availability.lunch_start_time and availability.lunch_end_time:
+            lunch_start_dt = uzbekistan_tz.localize(datetime.combine(requested_date, availability.lunch_start_time))
+            lunch_end_dt = uzbekistan_tz.localize(datetime.combine(requested_date, availability.lunch_end_time))
+
+        now_local = timezone.now().astimezone(uzbekistan_tz)
+
+        bookings = models.Booking.objects.filter(barber=availability.barber)
+        busy_intervals = []
+        for b in bookings:
+            b_start = b.date.astimezone(uzbekistan_tz)
+            b_end = b_start + b.service_time
+            if b_start.date() == requested_date:
+                busy_intervals.append((b_start, b_end))
+
+        def overlaps(a_start, a_end, b_start, b_end):
+            return a_start < b_end and b_start < a_end
+
+        available_times = []
+        cursor = work_start_dt
+        while cursor + service_time <= work_end_dt:
+            if requested_date == now_local.date() and cursor < now_local:
+                cursor = cursor + step
                 continue
 
-            is_time_free = True
-            for start, end in booked_times:
-                if start <= t < end:
-                    is_time_free = False
+            slot_end = cursor + service_time
+
+            if lunch_start_dt and lunch_end_dt and overlaps(cursor, slot_end, lunch_start_dt, lunch_end_dt):
+                cursor = cursor + step
+                continue
+
+            is_busy = False
+            for b_start, b_end in busy_intervals:
+                if overlaps(cursor, slot_end, b_start, b_end):
+                    is_busy = True
                     break
 
-            if is_time_free:
-                available_times.append(t.strftime("%H:%M"))
+            if not is_busy:
+                available_times.append(cursor.strftime('%H:%M'))
 
-        print(f"Final available times: {available_times}")
+            cursor = cursor + step
+
         return available_times
 
 
-from pytz import timezone
+from pytz import timezone as pytz_timezone
 
-uzbekistan_tz = timezone('Asia/Tashkent')
+uzbekistan_tz = pytz_timezone('Asia/Tashkent')
 from config.settings import BOT_TOKEN, ADMIN_CHAT_ID
 import requests
 import urllib.parse
@@ -300,11 +313,41 @@ class BookingView(APIView):
 
         try:
             local_datetime = uzbekistan_tz.localize(datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S"))
+            if local_datetime < timezone.now().astimezone(uzbekistan_tz):
+                return Response({'success': False, 'message': 'O\'tib ketgan vaqtni tanlab bo\'lmaydi.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if local_datetime.minute % 30 != 0 or local_datetime.second != 0:
+                return Response({'success': False, 'message': 'Vaqt 30 daqiqalik oraliqda bo\'lishi kerak.'}, status=status.HTTP_400_BAD_REQUEST)
+
             utc_datetime = local_datetime.astimezone(pytz.utc)
             service_time = timedelta(minutes=int(service_time_minutes))
 
             barber = get_object_or_404(models.Barber, id=barber_id)
             service = get_object_or_404(models.Service, id=service_id)
+
+            availability = models.Availability.objects.filter(barber=barber, day_of_week=['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][local_datetime.date().weekday()]).first()
+            if not availability:
+                return Response({'success': False, 'message': 'Bu kun uchun barber ish vaqti belgilanmagan.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            work_start_dt = uzbekistan_tz.localize(datetime.combine(local_datetime.date(), availability.start_time))
+            work_end_dt = uzbekistan_tz.localize(datetime.combine(local_datetime.date(), availability.end_time))
+            if local_datetime < work_start_dt or (local_datetime + service_time) > work_end_dt:
+                return Response({'success': False, 'message': 'Tanlangan vaqt barber ish vaqtiga to\'g\'ri kelmaydi.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if availability.lunch_start_time and availability.lunch_end_time:
+                lunch_start_dt = uzbekistan_tz.localize(datetime.combine(local_datetime.date(), availability.lunch_start_time))
+                lunch_end_dt = uzbekistan_tz.localize(datetime.combine(local_datetime.date(), availability.lunch_end_time))
+                if (local_datetime < lunch_end_dt) and (lunch_start_dt < (local_datetime + service_time)):
+                    return Response({'success': False, 'message': 'Tanlangan vaqt tushlik vaqtiga to\'g\'ri keladi.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            existing = models.Booking.objects.filter(barber=barber)
+            for b in existing:
+                b_start = b.date.astimezone(uzbekistan_tz)
+                b_end = b_start + b.service_time
+                if b_start.date() != local_datetime.date():
+                    continue
+                if local_datetime < b_end and b_start < (local_datetime + service_time):
+                    return Response({'success': False, 'message': 'Bu vaqt band qilingan.'}, status=status.HTTP_400_BAD_REQUEST)
 
             dopservice = None
             dopservice_name = None
@@ -373,6 +416,7 @@ XURMATLI ADMIN, SAYTDA YANGI BUYURTMA MAVJUD!"""
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import IsApprovedBarber, IsOwnerBarber
+from django.db import transaction
 
 
 class BarberDashboardProfileView(APIView):
@@ -405,10 +449,15 @@ class BarberDashboardServiceView(APIView):
         return Response({'success': True, 'data': sr.data})
 
     def post(self, request):
+        if not getattr(request.user, 'barber', None):
+            return Response({'success': False, 'message': 'Barber profile topilmadi.'}, status=status.HTTP_400_BAD_REQUEST)
         sr = serializers.ServiceCreateUpdateSerializer(data=request.data, context={'request': request})
         if sr.is_valid():
-            sr.save(barber=request.user.barber)
-            return Response({'success': True, 'message': 'Xizmat qo\'shildi!', 'data': sr.data}, status=status.HTTP_201_CREATED)
+            try:
+                sr.save(barber=request.user.barber)
+                return Response({'success': True, 'message': 'Xizmat qo\'shildi!', 'data': sr.data}, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({'success': False, 'message': f'Xizmatni saqlashda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -425,8 +474,11 @@ class BarberDashboardServiceDetailView(APIView):
         service = self.get_object(pk, request.user)
         sr = serializers.ServiceCreateUpdateSerializer(service, data=request.data, partial=True, context={'request': request})
         if sr.is_valid():
-            sr.save()
-            return Response({'success': True, 'message': 'Xizmat yangilandi!', 'data': sr.data})
+            try:
+                sr.save()
+                return Response({'success': True, 'message': 'Xizmat yangilandi!', 'data': sr.data})
+            except Exception as e:
+                return Response({'success': False, 'message': f'Xizmatni yangilashda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
@@ -446,10 +498,15 @@ class BarberDashboardDopServiceView(APIView):
         return Response({'success': True, 'data': sr.data})
 
     def post(self, request):
+        if not getattr(request.user, 'barber', None):
+            return Response({'success': False, 'message': 'Barber profile topilmadi.'}, status=status.HTTP_400_BAD_REQUEST)
         sr = serializers.DopServiceCreateUpdateSerializer(data=request.data, context={'request': request})
         if sr.is_valid():
-            sr.save(barber=request.user.barber)
-            return Response({'success': True, 'message': 'Qo\'shimcha xizmat qo\'shildi!', 'data': sr.data}, status=status.HTTP_201_CREATED)
+            try:
+                sr.save(barber=request.user.barber)
+                return Response({'success': True, 'message': 'Qo\'shimcha xizmat qo\'shildi!', 'data': sr.data}, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({'success': False, 'message': f'Qo\'shimcha xizmatni saqlashda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -465,8 +522,11 @@ class BarberDashboardDopServiceDetailView(APIView):
         service = self.get_object(pk, request.user)
         sr = serializers.DopServiceCreateUpdateSerializer(service, data=request.data, partial=True, context={'request': request})
         if sr.is_valid():
-            sr.save()
-            return Response({'success': True, 'message': 'Xizmat yangilandi!', 'data': sr.data})
+            try:
+                sr.save()
+                return Response({'success': True, 'message': 'Xizmat yangilandi!', 'data': sr.data})
+            except Exception as e:
+                return Response({'success': False, 'message': f'Xizmatni yangilashda xatolik: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
@@ -517,16 +577,55 @@ class BarberDashboardGalleryDeleteView(APIView):
         return Response({'success': True, 'message': 'Rasm o\'chirildi!'})
 
 
-class BarberDashboardBookingsView(APIView):
-    """Barberga tushgan barcha buyurtmalar"""
+class BarberDashboardAvailabilityView(APIView):
+    """Barber ish vaqti/tushlik vaqtini boshqarish"""
     permission_classes = [IsAuthenticated, IsApprovedBarber]
 
     def get(self, request):
-        bookings = models.Booking.objects.filter(
-            barber=request.user.barber
-        ).select_related('service', 'dopservice').order_by('-date')
-        sr = serializers.BookingDetailSerializer(bookings, many=True, context={'request': request})
+        qs = models.Availability.objects.filter(barber=request.user.barber)
+        sr = serializers.AvailabilitySerializer(qs, many=True)
         return Response({'success': True, 'data': sr.data})
+
+    @transaction.atomic
+    def put(self, request):
+        items = request.data
+        if not isinstance(items, list):
+            return Response({'success': False, 'message': 'Noto\'g\'ri format. List yuboring.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        allowed = {'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'}
+        created_or_updated = []
+
+        for item in items:
+            if not isinstance(item, dict):
+                return Response({'success': False, 'message': 'Har bir element object bo\'lishi kerak.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            day = item.get('day_of_week')
+            if day not in allowed:
+                return Response({'success': False, 'message': 'day_of_week noto\'g\'ri.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            obj = models.Availability.objects.filter(barber=request.user.barber, day_of_week=day).first()
+
+            if obj is None:
+                if not item.get('start_time') or not item.get('end_time'):
+                    return Response(
+                        {'success': False, 'message': 'Yangi kun uchun start_time va end_time majburiy.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                sr = serializers.AvailabilitySerializer(data=item)
+                if not sr.is_valid():
+                    return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
+                created = sr.save(barber=request.user.barber, day_of_week=day)
+                created_or_updated.append(created)
+            else:
+                sr = serializers.AvailabilitySerializer(obj, data=item, partial=True)
+                if not sr.is_valid():
+                    return Response({'success': False, 'errors': sr.errors}, status=status.HTTP_400_BAD_REQUEST)
+                updated = sr.save(barber=request.user.barber, day_of_week=day)
+                created_or_updated.append(updated)
+
+        out = serializers.AvailabilitySerializer(created_or_updated, many=True)
+        return Response({'success': True, 'message': 'Ish vaqti saqlandi!', 'data': out.data})
 
 
 class BarberDetailPublicView(APIView):
@@ -535,4 +634,54 @@ class BarberDetailPublicView(APIView):
     def get(self, request, pk):
         barber = get_object_or_404(models.Barber, pk=pk, is_approved=True)
         sr = serializers.BarberDetailPublicSerializer(barber, context={'request': request})
+        return Response({'success': True, 'data': sr.data})
+
+
+class BarberDashboardBookingsView(APIView):
+    """Barber dashboard - kutilayotgan buyurtmalar (pending)"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+
+    def get(self, request):
+        qs = models.Booking.objects.filter(barber=request.user.barber, status='pending').order_by('-date')
+        sr = serializers.BookingDetailSerializer(qs, many=True)
+        return Response({'success': True, 'data': sr.data})
+
+
+class BarberDashboardBookingActionView(APIView):
+    """Barber dashboard - buyurtmani tasdiqlash/rad etish"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+
+    def post(self, request, booking_id):
+        action = request.data.get('action')  # 'approve' or 'reject'
+        reason = request.data.get('rejection_reason', '')
+
+        if action not in ['approve', 'reject']:
+            return Response({'success': False, 'message': 'Noto\'g\'ri action. approve yoki reject bo\'lishi kerak.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            booking = models.Booking.objects.get(id=booking_id, barber=request.user.barber, status='pending')
+        except models.Booking.DoesNotExist:
+            return Response({'success': False, 'message': 'Buyurtma topilmadi yoki allaqachon ko\'rib chiqilgan.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if action == 'approve':
+            booking.status = 'approved'
+            booking.rejection_reason = None
+            booking.save()
+            return Response({'success': True, 'message': 'Buyurtma tasdiqlandi!'})
+        else:  # reject
+            if not reason:
+                return Response({'success': False, 'message': 'Rad etish sababini kiriting.'}, status=status.HTTP_400_BAD_REQUEST)
+            booking.status = 'rejected'
+            booking.rejection_reason = reason
+            booking.save()
+            return Response({'success': True, 'message': 'Buyurtma rad etildi.'})
+
+
+class BarberDashboardArchiveView(APIView):
+    """Barber dashboard - arxiv (approved/rejected)"""
+    permission_classes = [IsAuthenticated, IsApprovedBarber]
+
+    def get(self, request):
+        qs = models.Booking.objects.filter(barber=request.user.barber).exclude(status='pending').order_by('-date')
+        sr = serializers.BookingDetailSerializer(qs, many=True)
         return Response({'success': True, 'data': sr.data})

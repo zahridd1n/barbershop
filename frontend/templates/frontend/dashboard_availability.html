@@ -1,0 +1,256 @@
+{% extends "frontend/dashboard_base.html" %}
+
+{% block title %}Ish vaqti | Dashboard{% endblock %}
+{% block page_title %}Ish vaqti{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="dash-section">
+    <div class="dash-section-header">
+        <h3>Ish vaqti va tushlik</h3>
+        <div class="dash-header-actions">
+            <button class="dash-btn dash-btn-ghost" id="resetToDefaultBtn">
+                <i class="bi bi-arrow-counterclockwise"></i> Default
+            </button>
+            <button class="dash-btn dash-btn-primary" id="saveAvailabilityBtn">
+                <i class="bi bi-check-lg"></i> Saqlash
+            </button>
+        </div>
+    </div>
+
+    <div class="dash-availability-grid" id="availabilityBody"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    const csrfToken = getCookie('csrftoken');
+
+    async function safeJsonFromResponse(res) {
+        const raw = await res.text();
+        if (!raw) return { ok: res.ok, status: res.status, json: null, raw: '' };
+        try {
+            return { ok: res.ok, status: res.status, json: JSON.parse(raw), raw };
+        } catch (e) {
+            return { ok: res.ok, status: res.status, json: null, raw };
+        }
+    }
+
+    const DAYS = [
+        { key: 'mon', label: 'Dushanba' },
+        { key: 'tue', label: 'Seshanba' },
+        { key: 'wed', label: 'Chorshanba' },
+        { key: 'thu', label: 'Payshanba' },
+        { key: 'fri', label: 'Juma' },
+        { key: 'sat', label: 'Shanba' },
+        { key: 'sun', label: 'Yakshanba' },
+    ];
+
+    function normalizeTime(value) {
+        if (!value) return '';
+        const s = String(value);
+        if (s.length >= 5) return s.slice(0, 5);
+        return s;
+    }
+
+    function buildRow(day, data) {
+        const card = document.createElement('div');
+        card.className = 'dash-availability-card';
+        card.dataset.day = day.key;
+
+        card.innerHTML = `
+            <div class="dash-availability-card-header">
+                <strong>${day.label}</strong>
+            </div>
+            <div class="dash-availability-card-grid">
+                <div class="dash-form-group">
+                    <label>Ish boshlanish</label>
+                    <input type="text" class="dash-input dash-time" data-field="start_time" value="${normalizeTime(data?.start_time)}" placeholder="08:00" required>
+                </div>
+                <div class="dash-form-group">
+                    <label>Ish tugash</label>
+                    <input type="text" class="dash-input dash-time" data-field="end_time" value="${normalizeTime(data?.end_time)}" placeholder="17:00" required>
+                </div>
+                <div class="dash-form-group">
+                    <label>Tushlik boshlanish</label>
+                    <input type="text" class="dash-input dash-time" data-field="lunch_start_time" value="${normalizeTime(data?.lunch_start_time)}" placeholder="12:00">
+                </div>
+                <div class="dash-form-group">
+                    <label>Tushlik tugash</label>
+                    <input type="text" class="dash-input dash-time" data-field="lunch_end_time" value="${normalizeTime(data?.lunch_end_time)}" placeholder="13:00">
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    async function loadAvailability() {
+        const body = document.getElementById('availabilityBody');
+        body.innerHTML = `<div class="dash-loading"><i class="bi bi-arrow-repeat spin"></i> Yuklanmoqda...</div>`;
+
+        try {
+            const res = await fetch('/api/api28/dashboard/availability/', {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' },
+            });
+            const parsed = await safeJsonFromResponse(res);
+            const result = parsed.json;
+            if (!parsed.ok || !result || result.success === false) {
+                const msg = (result && (result.message || result.detail))
+                    ? (result.message || result.detail)
+                    : `HTTP ${parsed.status}. Login/CSRF yoki server xatosi bo'lishi mumkin.`;
+                showToast(msg, 'error');
+                body.innerHTML = `<div class="dash-empty"><i class="bi bi-exclamation-triangle"></i><p>Xatolik yuz berdi</p></div>`;
+                return;
+            }
+
+            const items = result.data || [];
+            const map = {};
+            items.forEach(x => { map[x.day_of_week] = x; });
+
+            body.innerHTML = '';
+            DAYS.forEach(day => {
+                body.appendChild(buildRow(day, map[day.key]));
+            });
+
+            initTimePickers();
+        } catch (e) {
+            body.innerHTML = `<div class="dash-empty"><i class="bi bi-exclamation-triangle"></i><p>Xatolik yuz berdi</p></div>`;
+        }
+    }
+
+    function initTimePickers() {
+        if (typeof flatpickr === 'undefined') return;
+        document.querySelectorAll('.dash-time').forEach((el) => {
+            if (el._flatpickr) return;
+            flatpickr(el, {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: 'H:i',
+                time_24hr: true,
+                minuteIncrement: 30,
+                allowInput: true,
+                disableMobile: true,
+                onOpen: function(selectedDates, dateStr, instance) {
+                    instance.input.classList.add('active');
+                },
+                onClose: function(selectedDates, dateStr, instance) {
+                    instance.input.classList.remove('active');
+                },
+            });
+        });
+    }
+
+    function collectPayload() {
+        const body = document.getElementById('availabilityBody');
+        const rows = Array.from(body.querySelectorAll('.dash-availability-card'));
+
+        const payload = rows.map(tr => {
+            const day = tr.dataset.day;
+            const fields = {};
+            tr.querySelectorAll('input').forEach(inp => {
+                fields[inp.dataset.field] = inp.value || null;
+            });
+            return { day_of_week: day, ...fields };
+        });
+
+        return payload;
+    }
+
+    function validateRows() {
+        const body = document.getElementById('availabilityBody');
+        const rows = Array.from(body.querySelectorAll('.dash-availability-card'));
+
+        for (const tr of rows) {
+            const start = tr.querySelector('[data-field="start_time"]').value;
+            const end = tr.querySelector('[data-field="end_time"]').value;
+            if (!start || !end) {
+                return 'Ish vaqti (boshlanish/tugash) majburiy.';
+            }
+            if (start >= end) {
+                return 'Ish vaqti noto\'g\'ri: boshlanish tugashdan kichik bo\'lishi kerak.';
+            }
+
+            const lunchStart = tr.querySelector('[data-field="lunch_start_time"]').value;
+            const lunchEnd = tr.querySelector('[data-field="lunch_end_time"]').value;
+
+            if ((lunchStart && !lunchEnd) || (!lunchStart && lunchEnd)) {
+                return 'Tushlik vaqtini to\'liq kiriting (boshlanish va tugash).';
+            }
+            if (lunchStart && lunchEnd) {
+                if (lunchStart >= lunchEnd) {
+                    return 'Tushlik vaqti noto\'g\'ri: boshlanish tugashdan kichik bo\'lishi kerak.';
+                }
+                if (lunchStart < start || lunchEnd > end) {
+                    return 'Tushlik vaqti ish vaqti ichida bo\'lishi kerak.';
+                }
+            }
+        }
+
+        return null;
+    }
+
+    document.getElementById('saveAvailabilityBtn').addEventListener('click', async () => {
+        const err = validateRows();
+        if (err) {
+            showToast(err, 'error');
+            return;
+        }
+
+        const btn = document.getElementById('saveAvailabilityBtn');
+        btn.disabled = true;
+
+        try {
+            const payload = collectPayload();
+            const res = await fetch('/api/api28/dashboard/availability/', {
+                method: 'PUT',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const parsed = await safeJsonFromResponse(res);
+            const result = parsed.json;
+
+            if (parsed.ok && result && result.success) {
+                showToast(result.message || 'Saqlandi!', 'success');
+                loadAvailability();
+            } else {
+                let msg = 'Xatolik yuz berdi';
+                if (result) {
+                    msg = result.message || result.detail || msg;
+                } else {
+                    msg = `HTTP ${parsed.status}. Ehtimol CSRF/login muammosi (HTML qaytdi).`;
+                }
+                showToast(msg, 'error');
+            }
+        } catch (e) {
+            showToast('Tarmoq/parse xatosi: console ni tekshiring', 'error');
+            console.error('Availability save error:', e);
+        }
+
+        btn.disabled = false;
+    });
+
+    document.getElementById('resetToDefaultBtn').addEventListener('click', () => {
+        document.querySelectorAll('.dash-availability-card').forEach(card => {
+            card.querySelector('[data-field="start_time"]').value = '08:00';
+            card.querySelector('[data-field="end_time"]').value = '17:00';
+            card.querySelector('[data-field="lunch_start_time"]').value = '12:00';
+            card.querySelector('[data-field="lunch_end_time"]').value = '13:00';
+        });
+        showToast('Default ish vaqti qo\'yildi. Saqlash tugmasini bosing.', 'success');
+    });
+
+    loadAvailability();
+</script>
+{% endblock %}

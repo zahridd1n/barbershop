@@ -21,7 +21,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 class DopServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.DopService
-        fields = ('id','title', 'description', 'name', 'price', 'time') 
+        fields = ('id','title', 'description', 'name', 'price', 'time', 'image') 
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -93,9 +93,11 @@ class BarberProfileUpdateSerializer(serializers.ModelSerializer):
 
 class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
     """Xizmat qo'shish/tahrirlash uchun"""
+    barber = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = models.Service
-        fields = ['id', 'title', 'name', 'description', 'price', 'time', 'image']
+        fields = ['id', 'title', 'name', 'description', 'price', 'time', 'image', 'barber']
         extra_kwargs = {
             'image': {'required': False},
         }
@@ -103,9 +105,11 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer):
 
 class DopServiceCreateUpdateSerializer(serializers.ModelSerializer):
     """Qo'shimcha xizmat qo'shish/tahrirlash uchun"""
+    barber = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = models.DopService
-        fields = ['id', 'title', 'name', 'description', 'price', 'time', 'image']
+        fields = ['id', 'title', 'name', 'description', 'price', 'time', 'image', 'barber']
         extra_kwargs = {
             'image': {'required': False},
         }
@@ -134,8 +138,14 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'service_time', 'price',
             'service_name', 'service_price',
             'dopservice_name', 'dopservice_price',
-            'barber_name',
+            'barber_name', 'status', 'rejection_reason',
         ]
+
+
+class AvailabilitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Availability
+        fields = ['day_of_week', 'start_time', 'end_time', 'lunch_start_time', 'lunch_end_time']
 
 
 class BarberDetailPublicSerializer(serializers.ModelSerializer):

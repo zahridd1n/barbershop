@@ -334,3 +334,14 @@ class DashboardBookingsView(BarberDashboardMixin, TemplateView):
             "estimated_revenue": estimated_revenue,
         })
         return context
+
+
+class DashboardAvailabilityView(BarberDashboardMixin, TemplateView):
+    """Ish vaqti va tushlik vaqtini sozlash"""
+    template_name = "frontend/dashboard_availability.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(self.get_site_context())
+        context['barber'] = self.request.user.barber
+        return context

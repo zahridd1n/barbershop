@@ -427,7 +427,25 @@ class BarberDashboardProfileView(APIView):
     def get(self, request):
         barber = request.user.barber
         sr = serializers.BarberProfileUpdateSerializer(barber, context={'request': request})
-        return Response({'success': True, 'data': sr.data})
+
+        # Statistika
+        from django.utils import timezone
+        from django.db.models import Sum, Count, Q
+        from datetime import date
+
+        today = date.today()
+        bookings = models.Booking.objects.filter(barber=barber)
+
+        stats = {
+            'total': bookings.count(),
+            'pending': bookings.filter(status='pending').count(),
+            'approved': bookings.filter(status='approved').count(),
+            'rejected': bookings.filter(status='rejected').count(),
+            'today': bookings.filter(date__date=today).count(),
+            'revenue': bookings.filter(status='approved').aggregate(total=Sum('price'))['total'] or 0,
+        }
+
+        return Response({'success': True, 'data': sr.data, 'stats': stats})
 
     def put(self, request):
         barber = request.user.barber

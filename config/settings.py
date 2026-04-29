@@ -1,8 +1,8 @@
 
 
 
-BOT_TOKEN = "7768144078:AAEsWuKvlQr1fcA2umEcWy-oQTxOlxftyT0"
-ADMIN_CHAT_ID = "6990611858"
+BOT_TOKEN = "8262661589:AAGTKb-oke5CwcjiHQUoPXOEaEgFiQJHwkQ"
+ADMIN_CHAT_ID = "7198137475"
 SITE_URL = "https://wavy-vaguely-starlet.ngrok-free.dev"
 from pathlib import Path
 

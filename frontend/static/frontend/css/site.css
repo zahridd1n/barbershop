@@ -446,6 +446,21 @@ body {
 .service-image {
     height: 250px;
 }
+.service-image-placeholder,
+.mini-card-image-placeholder {
+    height: 250px;
+    display: grid;
+    place-items: center;
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--line);
+    color:var(--muted);
+    font-size:2rem;
+    border-radius:20px 20px 0 0;
+}
+.mini-card-image-placeholder {
+    height:180px;
+    border-radius:20px 20px 0 0;
+}
 
 .team-image {
     height: 310px;

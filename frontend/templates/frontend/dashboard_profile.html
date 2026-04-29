@@ -5,6 +5,58 @@
 
 {% block content %}
 <div class="dash-section">
+    <!-- STATISTIKA -->
+    <div class="dash-stats-grid" id="statsGrid">
+        <div class="dash-stat-card">
+            <div class="dash-stat-icon"><i class="bi bi-calendar-check"></i></div>
+            <div>
+                <span class="dash-stat-label">Jami</span>
+                <strong class="dash-stat-value" id="statTotal">0</strong>
+                <span class="dash-stat-sub">buyurtma</span>
+            </div>
+        </div>
+        <div class="dash-stat-card">
+            <div class="dash-stat-icon"><i class="bi bi-clock"></i></div>
+            <div>
+                <span class="dash-stat-label">Kutilmoqda</span>
+                <strong class="dash-stat-value" id="statPending">0</strong>
+                <span class="dash-stat-sub">buyurtma</span>
+            </div>
+        </div>
+        <div class="dash-stat-card">
+            <div class="dash-stat-icon"><i class="bi bi-check-circle"></i></div>
+            <div>
+                <span class="dash-stat-label">Tasdiqlangan</span>
+                <strong class="dash-stat-value" id="statApproved">0</strong>
+                <span class="dash-stat-sub">buyurtma</span>
+            </div>
+        </div>
+        <div class="dash-stat-card">
+            <div class="dash-stat-icon"><i class="bi bi-x-circle"></i></div>
+            <div>
+                <span class="dash-stat-label">Rad etilgan</span>
+                <strong class="dash-stat-value" id="statRejected">0</strong>
+                <span class="dash-stat-sub">buyurtma</span>
+            </div>
+        </div>
+        <div class="dash-stat-card">
+            <div class="dash-stat-icon"><i class="bi bi-calendar-day"></i></div>
+            <div>
+                <span class="dash-stat-label">Bugun</span>
+                <strong class="dash-stat-value" id="statToday">0</strong>
+                <span class="dash-stat-sub">buyurtma</span>
+            </div>
+        </div>
+        <div class="dash-stat-card">
+            <div class="dash-stat-icon"><i class="bi bi-cash-stack"></i></div>
+            <div>
+                <span class="dash-stat-label">Tushum</span>
+                <strong class="dash-stat-value" id="statRevenue">0</strong>
+                <span class="dash-stat-sub">so'm</span>
+            </div>
+        </div>
+    </div>
+
     <form id="profileForm" class="dash-profile-form" enctype="multipart/form-data">
         {% csrf_token %}
 
@@ -61,6 +113,25 @@
 
 {% block extra_js %}
 <script>
+    // Statistika yuklash
+    async function loadStats() {
+        const res = await fetch('/api/api28/dashboard/profile/', {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success && data.stats) {
+            document.getElementById('statTotal').textContent = data.stats.total;
+            document.getElementById('statPending').textContent = data.stats.pending;
+            document.getElementById('statApproved').textContent = data.stats.approved;
+            document.getElementById('statRejected').textContent = data.stats.rejected;
+            document.getElementById('statToday').textContent = data.stats.today;
+            document.getElementById('statRevenue').textContent = data.stats.revenue.toLocaleString('uz-UZ');
+        }
+    }
+
+    loadStats();
+
     const profileForm = document.getElementById('profileForm');
     const profileImage = document.getElementById('profileImage');
     const profilePreview = document.getElementById('profilePreview');
@@ -130,6 +201,7 @@
             const result = await response.json();
             if (result.success) {
                 showToast('Profil muvaffaqiyatli yangilandi!', 'success');
+                loadStats(); // Statistikani yangilash
             } else {
                 showToast('Xatolik: ' + JSON.stringify(result.errors), 'error');
             }

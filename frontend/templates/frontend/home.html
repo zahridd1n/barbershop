@@ -116,7 +116,13 @@
             {% for service in services %}
                 <div class="col-md-6 col-xl-4">
                     <article class="service-card">
+                        {% if service.image %}
                         <img src="{{ service.image.url }}" alt="{{ service.name }}" class="service-image">
+                        {% else %}
+                        <div class="service-image service-image-placeholder">
+                            <i class="bi bi-scissors"></i>
+                        </div>
+                        {% endif %}
                         <div class="service-body">
                             <div class="d-flex justify-content-between align-items-start gap-3">
                                 <div>

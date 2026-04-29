@@ -23,7 +23,13 @@
             {% for service in services %}
                 <div class="col-md-6 col-xl-4">
                     <article class="service-card">
+                        {% if service.image %}
                         <img src="{{ service.image.url }}" alt="{{ service.name }}" class="service-image">
+                        {% else %}
+                        <div class="service-image service-image-placeholder">
+                            <i class="bi bi-scissors"></i>
+                        </div>
+                        {% endif %}
                         <div class="service-body">
                             <div class="d-flex justify-content-between align-items-start gap-3">
                                 <div>
@@ -70,7 +76,13 @@
             {% for service in dopservices %}
                 <div class="col-md-6 col-xl-4">
                     <article class="mini-card">
+                        {% if service.image %}
                         <img src="{{ service.image.url }}" alt="{{ service.name }}" class="mini-card-image">
+                        {% else %}
+                        <div class="mini-card-image mini-card-image-placeholder">
+                            <i class="bi bi-plus-circle"></i>
+                        </div>
+                        {% endif %}
                         <div class="mini-card-body">
                             <h3 class="service-name">{{ service.name }}</h3>
                             {% if service.barber %}
@@ -92,4 +104,5 @@
         </div>
     </div>
 </section>
-{% endblock %}
+{% endblock %}
+
